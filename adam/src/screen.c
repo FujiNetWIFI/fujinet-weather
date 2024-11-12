@@ -12,9 +12,9 @@
 #include <sys/ioctl.h>
 #include <stdbool.h>
 #include <ctype.h>
+#include "constants.h"
 #include "screen.h"
 #include "sprite.h"
-#include "constants.h"
 #include "ftime.h"
 #include "io.h"
 #include "options.h"
@@ -77,7 +77,7 @@ void screen_init(void) {
     clrscr(); 
 }
 
-void screen_colors(unsigned long d, short offset, unsigned char *fg, unsigned char *bg, bool *day)
+void screen_colors(unsigned long d, long offset, unsigned char *fg, unsigned char *bg, bool *day)
 {
     Timestamp ts;
 
@@ -462,7 +462,7 @@ bool screen_location(Location *l, bool *autoip, bool *manual)
 /* ***************************************************************************** */
 /* ***************************************************************************** */
 
-void screen_daily(char *date, unsigned char icon, char *temperature, char *pressure, char *description, char *location, char *wind, char *feels, char *dew, char *visibility, char *timezone,
+void screen_daily(char *date, unsigned char icon, char *temperature, char *pressure, char *description, char *location, char *wind, char *feels, char *dew, char *visibility, char *_timezone,
                   char *sunrise, char *sunset, char *humidity, char *clouds, char *time, unsigned char foregroundColor, unsigned char backgroundColor, bool day,
                   FUJI_TIME *future)
 {
@@ -490,7 +490,7 @@ void screen_daily(char *date, unsigned char icon, char *temperature, char *press
     save_sprite(24, 24, icon, day);
     display_sprites();
     screen_bigprint(2, 1, temperature);
-    gotoxy(23, 4);
+    gotoxy(22, 4);
     cprintf("%s", pressure);
     x_start = 36/2 - strlen(description)/2;
     if (x_start < 0)
@@ -501,7 +501,7 @@ void screen_daily(char *date, unsigned char icon, char *temperature, char *press
     gotoxy(16 - strlen(location)/2, 9);
     cprintf("%s", location);
 
-    sprintf(tmp, "WIND: %s\nFEELS LIKE: %s\n\nDEW POINT: %s\nVISIBILITY: %s\n\nTIME ZONE: %s", wind, feels, dew, visibility, timezone);
+    sprintf(tmp, "WIND: %s\nFEELS LIKE: %s\n\nDEW POINT: %s\nVISIBILITY: %s\n\nTIME ZONE: %s", wind, feels, dew, visibility, _timezone);
     smartkeys_puts(0, 96, tmp);
 
     sprintf(tmp, "SUNRISE: %s\nSUNSET: %s\n\nHUMIDITY: %s\nCLOUDS: %s\n\nTIME: %s", sunrise, sunset, humidity, clouds, time);

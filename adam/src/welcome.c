@@ -8,6 +8,7 @@
  *
  */
 
+#include "constants.h"
 #include "welcome.h"
 #include "screen.h"
 

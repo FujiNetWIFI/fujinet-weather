@@ -12,11 +12,11 @@
 #include <eos.h>
 #include <string.h>
 #include <conio.h>
+#include "constants.h"
 #include "location.h"
 #include "options.h"
 #include "screen.h"
 #include "io.h"
-#include "constants.h"
 #include "state.h"
 
 Location locData;

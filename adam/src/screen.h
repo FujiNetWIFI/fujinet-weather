@@ -13,7 +13,6 @@
 #include "options.h"
 #include "io.h"
 
-#define CLIENT_VERSION "1.0"
 void screen_init(void);
 
 #define STATUS_DELAY (100)
@@ -31,7 +30,7 @@ out
 - bg:               background colour based on time
 - dayNight:         true = day time
 */
-void screen_colors(unsigned long d, short offset, unsigned char *fg, unsigned char *bg, bool *dayNight);
+void screen_colors(unsigned long d, long offset, unsigned char *fg, unsigned char *bg, bool *dayNight);
 
 void screen_welcome(void);
 

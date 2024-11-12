@@ -8,6 +8,7 @@
  *
  */
 
+#include "constants.h"
 #include "screen.h"
 
 void init(void) { 

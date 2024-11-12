@@ -34,11 +34,6 @@ unsigned char FAKE_eos_read_character_device(unsigned char dev, void *buf, unsig
 
 
 #define DISPLAY_DEBUG 1
-#define DEBUG_DELAY   (400)
-
-#define MAX_APP_DATA (128)
-#define MAX_URL      (256)
-#define MAX_QUERY    (128)
 
 extern unsigned char response[1024];
 

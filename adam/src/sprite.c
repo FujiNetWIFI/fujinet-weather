@@ -77,6 +77,239 @@ const unsigned char spritedata[] = {
     0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01, 0x03, 0x00, 0x00, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x30, 0x60, 0xC0, 0x80, 0xFC, 0x18, 0x30, 0x60, 0xF0, 0xE0, 0x80
 };
 
+/*
+ open-meteo.com
+
+WMO Weather interpretation codes (WW)
+Code	    Description
+0	        Clear sky
+1           Mainly clear
+2           partly cloudy
+3	        overcast
+45, 48	    Fog and depositing rime fog
+51, 53, 55	Drizzle: Light, moderate, and dense intensity
+56, 57	    Freezing Drizzle: Light and dense intensity
+61, 63, 65	Rain: Slight, moderate and heavy intensity
+66, 67	    Freezing Rain: Light and heavy intensity
+71, 73, 75	Snow fall: Slight, moderate, and heavy intensity
+77	        Snow grains
+80, 81, 82	Rain showers: Slight, moderate, and violent
+85, 86	    Snow showers slight and heavy
+95*	        Thunderstorm: Slight or moderate
+96, 99 *	Thunderstorm with slight and heavy hail
+
+* Thunderstorm forecast with hail is only available in Central Europe
+*/
+
+#ifdef USE_METEO
+
+void get_description(char *wmo, char *description)
+{
+    int wmo_code = atoi(wmo);
+    bool sprite_found = true;
+
+    switch (wmo_code)
+    {
+    case 0:
+        strcpy(description, "Clear Sky");
+        break;
+    case 1:
+        strcpy(description, "Mainly Clear");
+        break;
+    case 2:
+        strcpy(description, "Scattered Clouds");
+        break;
+    case 3:
+        strcpy(description, "Overcast");
+        break;
+    case 45:
+    case 48:
+        // fog
+        strcpy(description, "Fog or Ice Fog");
+        break;
+    case 51:
+        strcpy(description, "Light Drizzle");
+        break;
+    case 53:
+        strcpy(description, "Moderate Drizzle");
+        break;
+    case 55:
+        strcpy(description, "Dense Drizzle");
+        break;
+    case 61:
+        strcpy(description, "Slight Rain");
+        break;
+    case 63:
+        strcpy(description, "Moderate Rain");
+        break;
+    case 65:
+        strcpy(description, "Heavy Rain");
+        break;
+    case 66:
+        strcpy(description, "Light Freezing Rain");
+        break;
+    case 67:
+        strcpy(description, "Heavy Freezing Rain");
+        break;
+    case 71:
+        strcpy(description, "Slight Snow");
+        break;
+    case 73:
+        strcpy(description, "Moderate Snow");
+        break;
+    case 75:
+        strcpy(description, "Heavy Snow");
+        break;
+    case 77:
+        strcpy(description, "Snow Grains");
+        break;
+    case 80:
+        strcpy(description, "Light Showers");
+        break;
+    case 81:
+        strcpy(description, "Moderate Showers");
+        break;
+    case 82:
+        strcpy(description, "Violent Showers");
+        break;
+    case 85:
+        strcpy(description, "Slight Snow Showers");
+        break;
+    case 86:
+        strcpy(description, "Heavy Snow Showers");
+        break;
+    case 95:
+        strcpy(description, "Thunderstorm");
+        break;
+    case 96:
+        strcpy(description, "Thunderstorms with Slight Hail");
+        break;
+    case 99:
+        strcpy(description, "Thunderstorms with Heavy Hail");
+        break;
+    default:
+        sprite_found = false;
+    }
+
+    // generic cases
+    if (!sprite_found)
+    {
+        if (wmo_code < 20)
+            strcpy(description, "Scattered Clouds");
+        else if (wmo_code < 30)
+            strcpy(description, "Rain");
+        else if (wmo_code < 40)
+            strcpy(description, "Snow");
+        else if (wmo_code < 50)
+            strcpy(description, "Fog");
+        else if (wmo_code < 60)
+            strcpy(description, "Rain");
+        else if (wmo_code < 70)
+            strcpy(description, "Rain");
+        else if (wmo_code < 80)
+            strcpy(description, "Snow");
+        else
+            strcpy(description, "Thunderstorms");
+    }
+
+}
+
+
+unsigned char get_sprite(char *c)
+{
+    int wmo_code = atoi(c);
+    unsigned char sprite = SPRITE_CLEAR_SKY;
+    bool sprite_found = true;
+
+
+    switch (wmo_code)
+    {
+        case 0:
+        case 1:
+            sprite = SPRITE_CLEAR_SKY;
+            break;
+        case 2:
+            sprite = SPRITE_FEW_CLOUDS;
+            break;
+        case 3:
+            sprite = SPRITE_SCATTERED_CLOUDS;
+            break;
+        case 45:
+        case 48:
+            // fog
+            sprite = SPRITE_MIST;
+            break;
+        case 51:
+        case 53:
+        case 55:
+            sprite = SPRITE_SHOWER_RAIN;
+            break;
+        case 61:
+        case 63:
+        case 65:
+            sprite = SPRITE_RAIN;
+            break;
+        case 66:
+        case 67:
+            sprite = SPRITE_SNOW;
+            break;
+        case 71:
+        case 73:
+        case 75:
+        case 77:
+            sprite = SPRITE_SNOW;
+            break;
+        case 80:
+        case 81:
+        case 82:
+            sprite = SPRITE_SHOWER_RAIN;
+            break;
+        case 85:
+        case 86:
+            sprite = SPRITE_SNOW;
+            break;
+        case 95:
+        case 96:
+        case 99:
+            sprite = SPRITE_THUNDERSTORM;
+            break;
+        default:
+            sprite_found = false;
+    }
+
+
+    // generic cases
+    if (! sprite_found)
+    {
+        if (wmo_code < 20)
+            sprite = SPRITE_FEW_CLOUDS;
+        else
+        if (wmo_code < 30)
+            sprite = SPRITE_SHOWER_RAIN;
+        else 
+        if (wmo_code < 40)
+            sprite = SPRITE_SNOW;
+        else 
+        if (wmo_code < 50)
+            sprite = SPRITE_MIST;
+        else 
+        if (wmo_code < 60)
+            sprite = SPRITE_SHOWER_RAIN;
+        else 
+        if (wmo_code < 70)
+            sprite = SPRITE_SHOWER_RAIN;
+        else 
+        if (wmo_code < 80)
+            sprite = SPRITE_SNOW;
+        else
+            sprite = SPRITE_THUNDERSTORM;
+    }
+
+    return sprite;
+}
+
+#else
+
 // https://openweathermap.org/weather-conditions
  
 unsigned char get_sprite(char *c)
@@ -100,6 +333,9 @@ unsigned char get_sprite(char *c)
     else if (strcmp(c, "50d") == 0 || strcmp(c, "50n") == 0)
         return SPRITE_MIST;
 }
+
+#endif
+
 
 /*
 clear_all_sprites 

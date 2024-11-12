@@ -141,12 +141,12 @@ unsigned char FAKE_eos_read_character_device(unsigned char dev, void *buf, unsig
 
 unsigned char response[1024];
 
-char *strncpy2(char *dest, char *src, size_t size)
+char *strncpy2(char *dest, char *src, size_t dest_size)
 {
     char *p;
 
-    p = strncpy(dest, src, size-1);
-    dest[size-1] = '\0';
+    p = strncpy(dest, src, dest_size-1);
+    dest[dest_size-1] = '\0';
     return p;
 }
 

@@ -98,5 +98,8 @@ void display_sprites(void);
 void write_sprites(void);
 void save_sprite(unsigned char x, unsigned char y, unsigned char icon, bool day);
 
+#ifdef USE_METEO
+void get_description(char *wmo, char *description);
+#endif
 
 #endif /* ICON_H */

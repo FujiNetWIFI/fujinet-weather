@@ -9,13 +9,14 @@
  */
 
 #include <conio.h>
+#include "constants.h"
 #include "init.h"
 #include "io.h"
 #include "welcome.h"
 #include "options.h"
 #include "location.h"
 #include "weather.h"
-#include "constants.h"
+
 #include "forecast.h"
 #include "screen.h"
 #include "state.h"
