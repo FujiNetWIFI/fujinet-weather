@@ -30,7 +30,9 @@ void get_location(LOCATION *loc) {
 	char	buf[LINE_LEN];
 	char	message[LINE_LEN];
 
-	network_open(ip_url, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	err = network_open(ip_url, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("ip-api open");
+
     err = network_json_parse(ip_url);
     handle_err("ip-api parse");
 

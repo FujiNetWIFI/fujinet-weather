@@ -43,7 +43,8 @@ bool om_geocoding(LOCATION *loc, char *city) {
 	strcat(omurl, city);
 	strcat(omurl, om_geocoding_tail);
 
-    network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("open meteo open");
     err = network_json_parse(omurl);
     handle_err("open meteo geocoding parse");
 
@@ -82,7 +83,9 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
 
 	progress_dots(0);
 
-    network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("om open");
+
     err = network_json_parse(omurl);
     handle_err("om parse");
 
@@ -116,7 +119,9 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
 
 	progress_dots(1);
 
-    network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("omurl open 2");
+
     err = network_json_parse(omurl);
     handle_err("omurl parse 2");
 
@@ -141,7 +146,8 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
 
 	progress_dots(2);
 
-    network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("forecast 1 open");
 
 	progress_dots(3);
 
@@ -160,7 +166,9 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
 
 	progress_dots(4);
 
-    network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+    handle_err("forecast 2 open");
+
     err = network_json_parse(omurl);
     handle_err("forecast 2 parse");
 

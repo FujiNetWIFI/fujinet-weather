@@ -1,5 +1,5 @@
 # Makefile For FujiNet Weather
-# 2024
+# 2025
 #
 
 
@@ -16,7 +16,7 @@ export DEBUG
 export FUJINET_BUILD_TOOLS_DIR := ../../fujinet-build-tools
 
 # Set this to the version of FN-LIB you wish to use in this project:
-export FUJINET_LIB_VERSION := 4.7.3
+export FUJINET_LIB_VERSION := 4.7.7
 
 SUB_TASKS := clean disk test release
 .PHONY: all help $(SUB_TASKS)
