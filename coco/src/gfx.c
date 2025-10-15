@@ -8,10 +8,20 @@
 
 #include <cmoc.h>
 #include <coco.h>
+#include "weatherdefs.h"
+#include "gfx.h"
 #include "font.h"
+
+#define	DOT_SET			0x20
+#define	DOT_FLASH		0x60
+#define	DOT_CLEAR		0xa0
 
 #define BUFFER_OFFSET(x,y) ((y << 5) + (x >> 2))
 #define PIXEL_OFFSET(x) (x & 0x03)
+
+int	err;
+
+extern LOCATION current;
 
 /**
  * @brief Pointer to screen buffer for PMODE
@@ -52,21 +62,21 @@ void pset(int x, int y,unsigned char c)
  */
 void putc(int x, int y, char c, char ch)
 {
-  for (int i=0;i<8;i++)
+  for (int i = 0; i < 8; i++)
+  {
+    char b = font[ch][i];
+    for (int j = 0; j < 8; j++)
     {
-      char b = font[ch][i];
-      for (int j=0;j<8;j++)
-	{
-	  if (b < 0)
-	    pset(x,y,c);
+      if (b < 0)
+        pset(x, y, c);
 
-	  b <<= 1;
-	  
-	  x++;
-	}
-      y++;
-      x -= 8;
+      b <<= 1;
+
+      x++;
     }
+    y++;
+    x -= 8;
+  }
 }
 
 /**
@@ -78,24 +88,24 @@ void putc(int x, int y, char c, char ch)
  */
 void putc_dbl(int x, int y, char c, char ch)
 {
-  for (int i=0;i<8;i++)
+  for (int i = 0; i < 8; i++)
+  {
+    char b = font[ch][i];
+    for (int j = 0; j < 8; j++)
     {
-      char b = font[ch][i];
-      for (int j=0;j<8;j++)
-	{
-	  if (b < 0)
-	    {
-	      pset(x,y,c);
-	      pset(x,y+1,c);
-	    }
+      if (b < 0)
+      {
+        pset(x, y, c);
+        pset(x, y + 1, c);
+      }
 
-	  b <<= 1;
-	  
-	  x++;
-	}
-      y+=2;
-      x -= 8;
+      b <<= 1;
+
+      x++;
     }
+    y += 2;
+    x -= 8;
+  }
 }
 
 /**
@@ -149,28 +159,27 @@ void puts_dbl(int x, int y, char c, const char *s)
  */
 void put_icon(int x, int y, byte *icon)
 {
-  int o = BUFFER_OFFSET(x,y);
-  
-  for (int i=0;i<24;i++)
-    {
-      screenBuffer[o] = *icon++;
-      screenBuffer[o+1] = *icon++;
-      screenBuffer[o+2] = *icon++;
-      screenBuffer[o+3] = *icon++;
-      screenBuffer[o+4] = *icon++;
-      screenBuffer[o+5] = *icon++;
-      o += 32;
-      icon -= 6;
+  int o = BUFFER_OFFSET(x, y);
 
-      screenBuffer[o] = *icon++;
-      screenBuffer[o+1] = *icon++;
-      screenBuffer[o+2] = *icon++;
-      screenBuffer[o+3] = *icon++;
-      screenBuffer[o+4] = *icon++;
-      screenBuffer[o+5] = *icon++;
-      o += 32;
-      
-    }
+  for (int i = 0; i < 24; i++)
+  {
+    screenBuffer[o] = *icon++;
+    screenBuffer[o + 1] = *icon++;
+    screenBuffer[o + 2] = *icon++;
+    screenBuffer[o + 3] = *icon++;
+    screenBuffer[o + 4] = *icon++;
+    screenBuffer[o + 5] = *icon++;
+    o += 32;
+    icon -= 6;
+
+    screenBuffer[o] = *icon++;
+    screenBuffer[o + 1] = *icon++;
+    screenBuffer[o + 2] = *icon++;
+    screenBuffer[o + 3] = *icon++;
+    screenBuffer[o + 4] = *icon++;
+    screenBuffer[o + 5] = *icon++;
+    o += 32;
+  }
 }
 
 /**
@@ -205,4 +214,83 @@ void gfx_cls(unsigned char c)
   const byte b[4]={0x00,0x55,0xAA,0xFF};
 
   memset(screenBuffer,b[c],6144);
+}
+
+
+void disp_message(char *msg) 
+{
+	gfx_cls(CYAN);
+	puts(0,80, WHITE, msg);
+}
+
+//
+// handle_err
+//
+void handle_err(char *message)
+{
+  if (err != 0)
+  {
+    screen(1,1);
+    locate(0,0);
+    printf("ERROR: %s:CODE=%d\n\r", message, err);
+    locate(0,1);
+    printf("%s", "[PLEASE PRESS ANY KEY (EXIT)]");
+    waitkey(0);
+    exit(1);
+  }
+}
+
+void progress_dots(char p) 
+{
+	char	i;
+	char	value;
+
+	for (i=0; i < 5; i++) {
+		if (p > i) {
+			value = DOT_CLEAR;
+		}
+		else {
+			value = DOT_SET;
+		}
+		//POKE(PROGRESS_ADDR + (i*2), value); 
+	}
+}
+
+void disp_menu(char *str) 
+{
+	puts(0, 160, WHITE, str);
+}
+
+void change_location(LOCATION *loc)
+{
+  char input[40];
+
+  // gfx_cls(CYAN);
+  // puts(80, 16, WHITE, "Change location");
+  // puts(160, 80, WHITE, "Input city name");
+  // puts(160, 88, WHITE, "[ or hit return: current location ]");
+  // puts(0, 104, WHITE, ">");
+  // gotoxy(2, 13);
+  // gets(input);
+  // if (strlen(input) == 0)
+  // {
+  //   *loc = current;
+  // }
+  // else
+  // {
+  //   if (!om_geocoding(loc, input))
+  //   {
+  //     gotoxy(2, 15);
+  //     cprintf("city '%s'was not found", input);
+  //     gotoxy(2, 16);
+  //     cprintf("using current location");
+  //     gotoxy(2, 17);
+  //     cprintf("(please hit return to continue)");
+  //     gets(input);
+  //     *loc = current;
+  //   }
+  // }
+  // gfx_cls(CYAN);
+
+  *loc = current;
 }

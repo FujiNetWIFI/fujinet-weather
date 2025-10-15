@@ -14,6 +14,8 @@
 #define PURPLE 0x02
 #define ORANGE 0x03
 
+#include "weatherdefs.h"
+
 /**
  * @brief set pixel at x,y to color c
  * @param x horizontal position (0-127)
@@ -81,5 +83,35 @@ void gfx(unsigned char c);
  * @param c Color to clear display with
  */
 void gfx_cls(unsigned char c);
+
+/**
+ * @brief Clear screen and display message
+ * @param msg Message to display
+ */
+void disp_message(char *msg);
+
+/**
+ * @brief Print error message and halt
+ * @param message Message to display        
+ */ 
+void handle_err(char *message);
+
+/**
+ * @brief Display progress dots
+ * @param p Number of dots to display (0-5)     
+ */
+void progress_dots(char p);
+
+/**
+ * @brief Display menu string at bottom of screen
+ * @param str Menu string to display
+ */
+void disp_menu(char *str); 
+
+/**
+ * @brief Read new location from user
+ * @param loc Pointer to LOCATION struct to fill in 
+ */
+void change_location(LOCATION *loc);
 
 #endif /* GFX_H */
