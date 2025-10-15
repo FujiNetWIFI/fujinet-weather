@@ -17,7 +17,7 @@ char omurl[256];
 char om_head[] = "N:https://api.open-meteo.com/v1/forecast?latitude=";
 char om_lon[] = "&longitude=";
 
-char om_tail_weather1[] ="&timezone=auto&timeformat=unixtime&current=relative_humidity_2m,weather_code,cloud_cover,surface_pressure";
+char om_tail_weather1[] ="&timezone=auto&current=relative_humidity_2m,weather_code,cloud_cover,surface_pressure";
 char om_tail_weather2[] ="&current=temperature_2m,apparent_temperature,,wind_speed_10m,wind_direction_10m&hourly=dew_point_2m,visibility&forecast_hours=1";
 
 char om_tail_forecast1[] ="&forecast_days=8&forecast_hours=1&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset";

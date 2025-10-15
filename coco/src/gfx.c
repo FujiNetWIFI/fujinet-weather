@@ -62,22 +62,37 @@ void pset(int x, int y,unsigned char c)
  */
 void putc(int x, int y, char c, char ch)
 {
-  for (int i = 0; i < 8; i++)
+  for (int i = 0; i < 8; i++) // 8 rows
   {
-    char b = font[ch][i];
-    for (int j = 0; j < 8; j++)
+    unsigned char b = font4x8[(unsigned char)ch][i];
+
+    for (int j = 0; j < 4; j++) // 4 columns
     {
-      if (b < 0)
-        pset(x, y, c);
-
-      b <<= 1;
-
-      x++;
+      if (b & (1 << (3 - j)))   // test bit 3..0 (left to right)
+        pset(x + j, y, c);
     }
+
     y++;
-    x -= 8;
   }
 }
+// void putc(int x, int y, char c, char ch)
+// {
+//   for (int i = 0; i < 8; i++)
+//   {
+//     char b = font[ch][i];
+//     for (int j = 0; j < 8; j++)
+//     {
+//       if (b < 0)
+//         pset(x, y, c);
+
+//       b <<= 1;
+
+//       x++;
+//     }
+//     y++;
+//     x -= 8;
+//   }
+// }
 
 /**
  * @brief Put character ch in font at x,y with color c double height
@@ -90,21 +105,18 @@ void putc_dbl(int x, int y, char c, char ch)
 {
   for (int i = 0; i < 8; i++)
   {
-    char b = font[ch][i];
-    for (int j = 0; j < 8; j++)
+    unsigned char b = font4x8[(unsigned char)ch][i];
+
+    for (int j = 0; j < 4; j++)
     {
-      if (b < 0)
+      if (b & (1 << (3 - j)))   // reverse bit order
       {
-        pset(x, y, c);
-        pset(x, y + 1, c);
+        pset(x + j, y, c);
+        pset(x + j, y + 1, c);
       }
-
-      b <<= 1;
-
-      x++;
     }
+
     y += 2;
-    x -= 8;
   }
 }
 
@@ -118,16 +130,16 @@ void putc_dbl(int x, int y, char c, char ch)
 void puts(int x, int y, char c, const char *s)
 {
   while (*s)
-    {
-      putc(x,y,c,*s++);
-      x += 8;
+  {
+    putc(x, y, c, *s++);
+    x += 4;
 
-      if (x > 128)
-	{
-	  x=0;
-	  y += 8;
-	}
+    if (x > 128)
+    {
+      x = 0;
+      y += 4;
     }
+  }
 }
 
 /**
@@ -140,16 +152,16 @@ void puts(int x, int y, char c, const char *s)
 void puts_dbl(int x, int y, char c, const char *s)
 {
   while (*s)
-    {
-      putc_dbl(x,y,c,*s++);
-      x += 8;
+  {
+    putc_dbl(x, y, c, *s++);
+    x += 4;
 
-      if (x > 128)
-	{
-	  x=0;
-	  y += 16;
-	}
+    if (x > 128)
+    {
+      x = 0;
+      y += 16;
     }
+  }
 }
 
 /**
@@ -232,8 +244,10 @@ void handle_err(char *message)
   {
     screen(1,1);
     locate(0,0);
-    printf("ERROR: %s:CODE=%d\n\r", message, err);
+    printf("ERROR: %s", message);
     locate(0,1);
+    printf("CODE=%02X", err);
+    locate(0,2);
     printf("%s", "[PLEASE PRESS ANY KEY (EXIT)]");
     waitkey(0);
     exit(1);
