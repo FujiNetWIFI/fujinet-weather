@@ -58,6 +58,8 @@ void weather(WEATHER *wi)
 	current_screen = 1;
 	current_forecast_page = 0;
 
+	gfx_cls(CYAN);
+
 	//"2025-10-13T21:15" is the source string.
 	strncpy(year, wi->datetime, 4);
 	strncpy(month, wi->datetime + 5, 2);
@@ -75,10 +77,10 @@ void weather(WEATHER *wi)
 	puts(112, 4, 2, min);
 
 	// weather conditions icon
-	put_icon(8, 16, icon_code(wi->icon));
+	put_icon(0, 0, icon_code(wi->icon));
 
 	// Temperature
-	puts_dbl(40, 24, WHITE, wi->temp);
+	puts_dbl(40, 16, WHITE, wi->temp);
 
 	// Pressure
 	puts_dbl(40, 40, WHITE, wi->pressure);
@@ -119,7 +121,7 @@ void weather(WEATHER *wi)
 
 	// Sunset
 	strncpy(time_buf, wi->sunset + 11, 5);
-	puts(0 + 4 + 8, 176, WHITE, "SUNSET:");
+	puts(0 + 4 , 176, WHITE, "SUNSET:");
 	puts(64 + 4, 176, PURPLE, time_buf);
 }
 

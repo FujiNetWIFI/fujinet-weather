@@ -41,7 +41,7 @@ int main(void)
 	COMMAND com = COM_REFRESH;
 
 	init();
-	disp_message("Fetching location data...");
+	disp_message("  Fetching location data...");
 	get_location(&loc);
 	current = loc;
 	forecast_page = 0;
@@ -49,7 +49,7 @@ int main(void)
 	while (!quit) {
 		switch (com) {
 			case COM_REFRESH:		// refresh
-				disp_message("Fetching weather data...");
+				disp_message("  Fetching weather data...");
 				get_om_info(&loc, &wi, &fc);
 				current_screen = SCREEN_INIT;
 			case COM_WEATHER:		// weather

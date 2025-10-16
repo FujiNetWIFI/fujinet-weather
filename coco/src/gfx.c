@@ -12,9 +12,9 @@
 #include "gfx.h"
 #include "font.h"
 
-#define	DOT_SET			0x20
-#define	DOT_FLASH		0x60
-#define	DOT_CLEAR		0xa0
+#define	PROGRESS_X 26
+#define PROGRESS_Y 80
+#define MENU_Y 184
 
 #define BUFFER_OFFSET(x,y) ((y << 5) + (x >> 2))
 #define PIXEL_OFFSET(x) (x & 0x03)
@@ -75,24 +75,6 @@ void putc(int x, int y, char c, char ch)
     y++;
   }
 }
-// void putc(int x, int y, char c, char ch)
-// {
-//   for (int i = 0; i < 8; i++)
-//   {
-//     char b = font[ch][i];
-//     for (int j = 0; j < 8; j++)
-//     {
-//       if (b < 0)
-//         pset(x, y, c);
-
-//       b <<= 1;
-
-//       x++;
-//     }
-//     y++;
-//     x -= 8;
-//   }
-// }
 
 /**
  * @brief Put character ch in font at x,y with color c double height
@@ -169,6 +151,7 @@ void puts_dbl(int x, int y, char c, const char *s)
  * @param x horizontal position (0-127) // must be divisible by 8
  * @param y vertical position (0-191)
  */
+
 void put_icon(int x, int y, byte *icon)
 {
   int o = BUFFER_OFFSET(x, y);
@@ -232,7 +215,7 @@ void gfx_cls(unsigned char c)
 void disp_message(char *msg) 
 {
 	gfx_cls(CYAN);
-	puts(0,80, WHITE, msg);
+	puts(0,PROGRESS_Y, WHITE, msg);
 }
 
 //
@@ -240,13 +223,13 @@ void disp_message(char *msg)
 //
 void handle_err(char *message)
 {
-  if (err != 0)
+  if (err != 0 && err != 1)
   {
     screen(1,1);
     locate(0,0);
     printf("ERROR: %s", message);
     locate(0,1);
-    printf("CODE=%02X", err);
+    printf(" CODE: %02X", err);
     locate(0,2);
     printf("%s", "[PLEASE PRESS ANY KEY (EXIT)]");
     waitkey(0);
@@ -259,20 +242,24 @@ void progress_dots(char p)
 	char	i;
 	char	value;
 
-	for (i=0; i < 5; i++) {
-		if (p > i) {
-			value = DOT_CLEAR;
-		}
-		else {
-			value = DOT_SET;
-		}
-		//POKE(PROGRESS_ADDR + (i*2), value); 
-	}
+  for (i = 0; i < 5; i++)
+  {
+    if (p > i)
+    {
+      value = '.';
+    }
+    else
+    {
+      value = ' ';
+    }
+
+    putc((PROGRESS_X+i) * 4, PROGRESS_Y, WHITE, value);
+  }
 }
 
 void disp_menu(char *str) 
 {
-	puts(0, 160, WHITE, str);
+	puts(0, MENU_Y, WHITE, str);
 }
 
 void change_location(LOCATION *loc)
