@@ -34,6 +34,7 @@ char precip_str[] = {0x28, 0x29, 0x00};
 
 char *temp_unit[] = {c_str, f_str};
 char *speed_unit[] = {" m/s", "mph"};
+char *vis_unit[] = {" km", " mi"};
 
 char *wind_deg[] = {" N", " NE", " E", " SE", " S", " SW", " W", " NW"};
 
@@ -41,14 +42,13 @@ char current_forecast_page = 0;
 
 void weather(WEATHER *wi)
 {
-	char year[5];
-	char month[3];
-	char day[3];
-	char hour[3];
-	char min[3];
 	char prbuf[LINE_LEN];
+	char date_buf[DATE_LEN];
 	char time_buf[TIME_LEN];
 	int wind_idx;
+	long visi;
+	float visi_tmp_km;
+	float visi_tmp_mi;
 
 	if (current_screen == 1)
 	{
@@ -61,68 +61,88 @@ void weather(WEATHER *wi)
 	gfx_cls(CYAN);
 
 	//"2025-10-13T21:15" is the source string.
-	strncpy(year, wi->datetime, 4);
-	strncpy(month, wi->datetime + 5, 2);
-	strncpy(day, wi->datetime + 8, 2);
-	strncpy(hour, wi->datetime + 11, 2);
-	strncpy(min, wi->datetime + 14, 2);
+	strncpy(date_buf, wi->datetime, DATE_LEN-1);
+	date_buf[DATE_LEN-1] = 0x00;
+	strncpy(time_buf, wi->datetime + 11, TIME_LEN-1);
+	time_buf[TIME_LEN-1] = 0x00;
+
 	// 2023-12-31 18:25 is what we display.
-	puts(0, 4, 2, year);
-	puts(32, 4, 2, "-");
-	puts(40, 4, 2, month);
-	puts(56, 4, 2, "-");
-	puts(64, 4, 2, day);
-	puts(88, 4, 2, hour);
-	puts(104, 4, 2, ":");
-	puts(112, 4, 2, min);
+	sprintf(prbuf, "%s %s", date_buf, time_buf);
+	puts(0, 4, PURPLE, prbuf);
 
 	// weather conditions icon
-	put_icon(0, 0, icon_code(wi->icon));
+	put_icon(8, 16, icon_code(wi->icon));
 
 	// Temperature
-	puts_dbl(40, 16, WHITE, wi->temp);
+	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
+	puts_dbl(40, 16, WHITE, prbuf);
 
 	// Pressure
-	puts_dbl(40, 40, WHITE, wi->pressure);
+	sprintf(prbuf, "%s%s", wi->pressure, " hPa");
+	puts_dbl(40, 40, WHITE, prbuf);
 
 	// Condition
 	decode_description(wi->icon, prbuf);
 	puts(0, 72, WHITE, prbuf);
 
 	// Region
-	sprintf(prbuf, "%s, %s", wi->name, wi->country);
-	puts(0, 88, WHITE, prbuf);
+	if( strlen(wi->state) > 0 )
+	{
+		sprintf(prbuf, "%s, %s, %s", wi->name, wi->state, wi->country);
+	}
+	else
+	{
+		sprintf(prbuf, "%s, %s", wi->name, wi->country);
+	}
+	puts(0, 84, WHITE, prbuf);
 
 	// Humidity
-	puts(0 + 4, 104, WHITE, "HUMIDITY:");
-	puts(88 + 4, 104, PURPLE, wi->humidity);
+	puts(0 + 4, 100, WHITE, "Humidity:");
+	sprintf(prbuf, "%s %%", wi->humidity);
+	puts(40 + 4, 100, PURPLE, prbuf);
 
 	// Dew Point
-	puts(0 + 4, 116, WHITE, "DEW PT:");
-	puts(64 + 4, 116, PURPLE, wi->dew_point);
+	sprintf(prbuf, "%s%s", wi->dew_point, temp_unit[unit_opt]);
+	puts(0 + 4, 112, WHITE, "Dew Point:");
+	puts(44 + 4, 112, PURPLE, prbuf);
 
 	// Clouds
-	puts(0 + 4, 128, WHITE, "CLOUDS:");
-	puts(88 + 4, 128, PURPLE, wi->clouds);
+	puts(0 + 4, 124, WHITE, "Clouds:");
+	sprintf(prbuf, "%s %%", wi->clouds);
+	puts(32 + 4, 124, PURPLE, prbuf);
 
 	// Visibility
-	puts(0 + 4, 140, WHITE, "VISIBILITY:");
-	puts(88 + 4, 140, PURPLE, wi->visibility);
+	puts(0 + 4, 136, WHITE, "Visibility:");
+	visi_tmp_km = (double)atol(wi->visibility) / 1000.0;
+	if (unit_opt == METRIC) 
+	{
+		visi = (long) (visi_tmp_km + 0.5); // round to nearest
+	}
+	else 
+	{
+		visi_tmp_mi = visi_tmp_km * 0.621371;
+		visi = (long) (visi_tmp_mi + 0.5); // round to nearest
+	}
+	sprintf(prbuf, "%ld%s", visi, vis_unit[unit_opt]);
+	puts(48 + 4, 136, PURPLE, prbuf);
 
 	// Wind
 	wind_idx = (atoi(wi->wind_deg) % 360) / 45;
-	sprintf(prbuf, "W: %s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
-	puts(0 + 4, 152, WHITE, prbuf);
+	puts(0 + 4, 148, WHITE, "Wind:");
+	sprintf(prbuf, "%s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
+	puts(24 + 4, 148, PURPLE, prbuf);
 
 	// Sunrise
+	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunrise + 11, 5);
-	puts(0 + 4, 164, WHITE, "SUNRISE:");
-	puts(64 + 4, 164, PURPLE, time_buf);
+	puts(0 + 4, 160, WHITE, "Sunrise:");
+	puts(36 + 4, 160, PURPLE, time_buf);
 
 	// Sunset
+	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunset + 11, 5);
-	puts(0 + 4 , 176, WHITE, "SUNSET:");
-	puts(64 + 4, 176, PURPLE, time_buf);
+	puts(0 + 4 , 172, WHITE, "Sunset:");
+	puts(32 + 4, 172, PURPLE, time_buf);
 }
 
 //

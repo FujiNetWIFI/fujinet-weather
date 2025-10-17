@@ -10,12 +10,14 @@ struct location_info {
 	char	lon[HALF_LEN];
 	char	lat[HALF_LEN];
 	char	city[HALF_LEN];
+	char	state[HALF_LEN];
 	char	countryCode[QUARTER_LEN];
 };
 typedef struct location_info LOCATION;
 
 struct weather_info {
 	char	name[HALF_LEN];
+	char	state[HALF_LEN];
 	char	country[HALF_LEN];
 	char	timezone[LINE_LEN];
 	char    datetime[DATETIME_LEN];
@@ -62,4 +64,5 @@ typedef enum unit_option UNITOPT;
 #define SCREEN_INIT		0
 #define SCREEN_WEATHER	1
 #define SCREEN_FORECAST	2
-#endif
+
+#endif // WEATHERDEFS_H 

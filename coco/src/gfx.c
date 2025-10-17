@@ -9,6 +9,8 @@
 #include <cmoc.h>
 #include <coco.h>
 #include "weatherdefs.h"
+#include "openmeteo.h"
+#include "strutil.h"
 #include "gfx.h"
 #include "font.h"
 
@@ -223,7 +225,7 @@ void disp_message(char *msg)
 //
 void handle_err(char *message)
 {
-  if (err != 0 && err != 1)
+  if (err != 0)
   {
     screen(1,1);
     locate(0,0);
@@ -240,20 +242,20 @@ void handle_err(char *message)
 void progress_dots(char p) 
 {
 	char	i;
-	char	value;
+	char	color;
 
   for (i = 0; i < 5; i++)
   {
     if (p > i)
     {
-      value = '.';
+      color = WHITE;
     }
     else
     {
-      value = ' ';
+      color = CYAN;
     }
 
-    putc((PROGRESS_X+i) * 4, PROGRESS_Y, WHITE, value);
+    putc((PROGRESS_X+i) * 4, PROGRESS_Y, color, '.');
   }
 }
 
@@ -262,36 +264,100 @@ void disp_menu(char *str)
 	puts(0, MENU_Y, WHITE, str);
 }
 
+uint8_t input()
+{
+  char shift = false;
+  char k;
+
+  while (true)
+  {
+    k = inkey();
+
+    if (isKeyPressed(KEY_PROBE_SHIFT, KEY_BIT_SHIFT))
+    {
+      shift = 0x00;
+    }
+    else
+    {
+      if (k > '@' && k < '[')
+        shift = 0x20;
+    }
+
+    if (k)
+      return k + shift;
+  }
+}
+
+void get_line(char *buf, uint8_t max_len, int x, int y)
+{
+  uint8_t c;
+  uint8_t i = 0;
+  int init_x = x;
+
+  memset(buf, 0, max_len+1);
+
+  do
+  {
+    c = input();
+
+    if (isprint(c))
+    {
+      putc(x, y, WHITE, c);
+      buf[i] = c;
+      if (i < max_len - 1)
+      { 
+        i++;
+        x += 4;
+      }
+
+    }
+    else if (c == KEY_LEFT_ARROW)
+    {
+      if (i)
+      {
+        x -=4;
+        putc(x, y, CYAN, buf[i-1]);
+        --i;
+        buf[i] = '\0';
+      }
+    }
+  } while (c != KEY_ENTER);
+
+  buf[i] = '\0';
+}
+
 void change_location(LOCATION *loc)
 {
-  char input[40];
+  char input[LINE_LEN];
+  char linebuf[LINE_LEN];
 
-  // gfx_cls(CYAN);
-  // puts(80, 16, WHITE, "Change location");
-  // puts(160, 80, WHITE, "Input city name");
-  // puts(160, 88, WHITE, "[ or hit return: current location ]");
-  // puts(0, 104, WHITE, ">");
-  // gotoxy(2, 13);
-  // gets(input);
-  // if (strlen(input) == 0)
-  // {
-  //   *loc = current;
-  // }
-  // else
-  // {
-  //   if (!om_geocoding(loc, input))
-  //   {
-  //     gotoxy(2, 15);
-  //     cprintf("city '%s'was not found", input);
-  //     gotoxy(2, 16);
-  //     cprintf("using current location");
-  //     gotoxy(2, 17);
-  //     cprintf("(please hit return to continue)");
-  //     gets(input);
-  //     *loc = current;
-  //   }
-  // }
-  // gfx_cls(CYAN);
+  gfx_cls(CYAN);
+  puts(4, PROGRESS_Y, WHITE, "Change location");
+  puts(4, PROGRESS_Y + 8, WHITE, "Input city name, or");
+  puts(4, PROGRESS_Y + 16, WHITE, "ENTER for current location");
+  puts(4, PROGRESS_Y + 24, WHITE, ">");
 
-  *loc = current;
+  get_line(input, LINE_LEN - 1, 8, PROGRESS_Y + 24);
+  if (strlen(input) == 0)
+  {
+    *loc = current;
+  }
+  else
+  {
+    // Replace spaces with %20 for URL encoding
+    puts(4, PROGRESS_Y + 40, WHITE, "Validating city...");
+    replaceSpaces(input);
+    if (!om_geocoding(loc, input))
+    {
+      gfx_cls(CYAN);
+      sprintf(linebuf, "City '%s' was not found.", input);
+      puts(8, PROGRESS_Y, WHITE, linebuf );
+      puts(8, PROGRESS_Y + 8, WHITE, "Using current location.");
+      puts(8, PROGRESS_Y + 16, WHITE, "Press any key to continue.");
+      waitkey(0);
+      *loc = current;
+    }
+  }
+
+  gfx_cls(CYAN);
 }
