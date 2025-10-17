@@ -14,6 +14,9 @@
 #define PURPLE 0x02
 #define ORANGE 0x03
 
+#define KEY_ENTER 0x0D
+#define KEY_LEFT_ARROW 0x08   
+
 #include "weatherdefs.h"
 
 /**
