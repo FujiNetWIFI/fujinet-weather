@@ -3,7 +3,7 @@
 #include <fujinet-network.h>
 #include "weatherdefs.h"
 
-char tmp_buf[LINE_LEN * 2];
+char tmp_buf[HALF_LEN * 2];
 
 int isprint(int c)
 {

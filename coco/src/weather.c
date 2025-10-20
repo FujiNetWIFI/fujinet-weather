@@ -78,6 +78,13 @@ void disp_weather(WEATHER *wi)
 	// Temperature
 	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
 	puts_dbl(40, 16, WHITE, prbuf);
+
+
+	// Apparent temp
+	puts(72, 16, WHITE, "Feels");
+	puts(72, 24, WHITE, "Like:");
+	sprintf(prbuf, "%s%s", wi->feels_like, temp_unit[unit_opt]);
+	puts_dbl(96, 16, WHITE, prbuf);
 	
 	// Pressure
 	sprintf(prbuf, "%s%s", wi->pressure, " hPa");
