@@ -11,18 +11,17 @@
 #include "openmeteo.h"
 
 extern UNITOPT unit_opt;
-extern int	err;
-
+extern int err;
 
 char omurl[384];
 char om_head[] = "N:https://api.open-meteo.com/v1/forecast?latitude=";
 char om_lon[] = "&longitude=";
 
-char om_tail_weather1[] ="&timezone=auto&current=relative_humidity_2m,weather_code,cloud_cover,surface_pressure";
-char om_tail_weather2[] ="&current=temperature_2m,apparent_temperature,,wind_speed_10m,wind_direction_10m&hourly=dew_point_2m,visibility&forecast_hours=1";
+char om_tail_weather1[] = "&timezone=auto&current=relative_humidity_2m,weather_code,cloud_cover,surface_pressure";
+char om_tail_weather2[] = "&current=temperature_2m,apparent_temperature,,wind_speed_10m,wind_direction_10m&hourly=dew_point_2m,visibility&forecast_hours=1";
 
-char om_tail_forecast1[] ="&timezone=auto&forecast_days=8&forecast_hours=1&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset";
-char om_tail_forecast2[] ="&forecast_days=8&forecast_hours=1&daily=wind_speed_10m_max,wind_direction_10m_dominant,precipitation_sum,uv_index_max";
+char om_tail_forecast1[] = "&timezone=auto&forecast_days=8&forecast_hours=1&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset";
+char om_tail_forecast2[] = "&forecast_days=8&forecast_hours=1&daily=wind_speed_10m_max,wind_direction_10m_dominant,precipitation_sum,uv_index_max";
 
 /* unit option string */
 char *unit_str[] = {"&wind_speed_unit=ms", "&temperature_unit=fahrenheit&wind_speed_unit=mph"};
@@ -88,128 +87,131 @@ bool om_geocoding(LOCATION *loc, char *city)
 //
 // setup Open-Metro URL
 //
-void setup_omurl(LOCATION *loc, char *param) {
+void setup_omurl(LOCATION *loc, char *param)
+{
 	strcpy(omurl, om_head);
-    strcat(omurl, loc->lat);
-    strcat(omurl, om_lon);
-    strcat(omurl, loc->lon);
-    strcat(omurl, param);
+	strcat(omurl, loc->lat);
+	strcat(omurl, om_lon);
+	strcat(omurl, loc->lon);
+	strcat(omurl, param);
 	strcat(omurl, unit_str[unit_opt]);
 }
 //
 //
 //
-void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
-	char querybuf[LINE_LEN * 2];
- 
+void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
+{
+	char querybuf[HALF_LEN * 2];
+
 	pdot = 0;
-// weather 1 query
+	// weather 1 query
 	setup_omurl(loc, om_tail_weather1);
 
 	progress_dots(increment_dot());
 
-    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
-    handle_err("om open");
+	err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	handle_err("om open");
 
-    err = network_json_parse(omurl);
-    handle_err("om parse");
+	err = network_json_parse(omurl);
+	handle_err("om parse");
 
-//	city name, state, country code
+	//	city name, state, country code
 	strcpy(wi->name, loc->city);
 	strcpy(wi->state, loc->state);
 	strcpy(wi->country, loc->countryCode);
 
-//  date & time  
-    network_json_query_trim(omurl, "/current/time", querybuf);
+	//  date & time
+	network_json_query_trim(omurl, "/current/time", querybuf);
 	strcpy(wi->datetime, querybuf);
-//  timezone(offset) 
-    network_json_query_trim(omurl, "/utc_offset_seconds", querybuf);
+	//  timezone(offset)
+	network_json_query_trim(omurl, "/utc_offset_seconds", querybuf);
 	wi->tz = atol(querybuf);
-// timezone
-    network_json_query_trim(omurl, "/timezone", wi->timezone);
-//  pressure
-    network_json_query_trim(omurl, "/current/surface_pressure", wi->pressure);
-//  humidity
-    network_json_query_trim(omurl, "/current/relative_humidity_2m", wi->humidity);
-// weather code (icon)
-    network_json_query_trim(omurl, "/current/weather_code", querybuf);
-	wi->icon = (char) atoi(querybuf);
-//  clouds
-    network_json_query_trim(omurl, "/current/cloud_cover", wi->clouds);
+	// timezone
+	network_json_query_trim(omurl, "/timezone", wi->timezone);
+	//  pressure
+	network_json_query_trim(omurl, "/current/surface_pressure", wi->pressure);
+	//  humidity
+	network_json_query_trim(omurl, "/current/relative_humidity_2m", wi->humidity);
+	// weather code (icon)
+	network_json_query_trim(omurl, "/current/weather_code", querybuf);
+	wi->icon = (char)atoi(querybuf);
+	//  clouds
+	network_json_query_trim(omurl, "/current/cloud_cover", wi->clouds);
 
-	network_close(omurl);	// of weather1
+	network_close(omurl); // of weather1
 
-// weather 2 query
+	// weather 2 query
 	setup_omurl(loc, om_tail_weather2);
 
 	progress_dots(increment_dot());
 
-    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
-    handle_err("omurl open 2");
-	
-    err = network_json_parse(omurl);
-    handle_err("omurl parse 2");
-	
-//  temperature
-    network_json_query_trim(omurl, "/current/temperature_2m", wi->temp);
-//  feels_like
-    network_json_query_trim(omurl, "/current/apparent_temperature", wi->feels_like);
-//  dew_point
-    network_json_query_trim(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
-//  visibility
-    network_json_query_trim(omurl, "/hourly/visibility/0", wi->visibility);
-//  wind_speed
-    network_json_query_trim(omurl, "/current/wind_speed_10m", wi->wind_speed);
-//  wind_deg
-    err = network_json_query_trim(omurl, "/current/wind_direction_10m", wi->wind_deg);
+	err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	handle_err("omurl open 2");
 
-	network_close(omurl);	// of weather2
+	err = network_json_parse(omurl);
+	handle_err("omurl parse 2");
 
-//	forecast
-//  part 1
+	//  temperature
+	network_json_query_trim(omurl, "/current/temperature_2m", wi->temp);
+	//  feels_like
+	network_json_query_trim(omurl, "/current/apparent_temperature", wi->feels_like);
+	//  dew_point
+	network_json_query_trim(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
+	//  visibility
+	network_json_query_trim(omurl, "/hourly/visibility/0", wi->visibility);
+	//  wind_speed
+	network_json_query_trim(omurl, "/current/wind_speed_10m", wi->wind_speed);
+	//  wind_deg
+	err = network_json_query_trim(omurl, "/current/wind_direction_10m", wi->wind_deg);
+
+	network_close(omurl); // of weather2
+
+	//	forecast
+	//  part 1
 	setup_omurl(loc, om_tail_forecast1);
 
 	progress_dots(increment_dot());
 
-    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
-    handle_err("forecast 1 open");
+	err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	handle_err("forecast 1 open");
 
 	progress_dots(increment_dot());
 
-    err = network_json_parse(omurl);
-    handle_err("forecast 1 parse");
+	err = network_json_parse(omurl);
+	handle_err("forecast 1 parse");
 
 	set_forecast1(fc);
-	network_close(omurl);	// of forecast part 1
+	network_close(omurl); // of forecast part 1
 
-//  copy today's sunrise/sunset from forecat data to weather data
-	strcpy(wi->sunrise, fc->day[0].sunrise); 
-	strcpy(wi->sunset, fc->day[0].sunset); 
+	//  copy today's sunrise/sunset from forecat data to weather data
+	strcpy(wi->sunrise, fc->day[0].sunrise);
+	strcpy(wi->sunset, fc->day[0].sunset);
 
-//  part 2
+	//  part 2
 	setup_omurl(loc, om_tail_forecast2);
 
 	progress_dots(increment_dot());
 
-    err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
-    handle_err("forecast 2 open");
+	err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	handle_err("forecast 2 open");
 
-    err = network_json_parse(omurl);
-    handle_err("forecast 2 parse");
+	err = network_json_parse(omurl);
+	handle_err("forecast 2 parse");
 
 	progress_dots(increment_dot());
 
 	set_forecast2(fc);
 
-	network_close(omurl);	// of forecast part 2
+	network_close(omurl); // of forecast part 2
 }
 //
 // set forecast data part1
 //
-void set_forecast1(FORECAST *fc) {
-	char	i;
-	char querybuf[LINE_LEN * 2];
-	char prbuf[LINE_LEN];
+void set_forecast1(FORECAST *fc)
+{
+	char i;
+	char querybuf[LINE_LEN];
+	char prbuf[HALF_LEN];
 
 	for (i = 0; i <= 7; i++)
 	{
@@ -245,7 +247,7 @@ void set_forecast1(FORECAST *fc) {
 void set_forecast2(FORECAST *fc)
 {
 	char i;
-	char querybuf[LINE_LEN * 2];
+	char querybuf[HALF_LEN * 2];
 
 	for (i = 0; i <= 7; i++)
 	{
