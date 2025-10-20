@@ -14,7 +14,7 @@ extern UNITOPT unit_opt;
 extern int	err;
 
 
-char omurl[256];
+char omurl[384];
 char om_head[] = "N:https://api.open-meteo.com/v1/forecast?latitude=";
 char om_lon[] = "&longitude=";
 
@@ -31,8 +31,6 @@ char *unit_str[] = {"&wind_speed_unit=ms", "&temperature_unit=fahrenheit&wind_sp
 char om_geocoding_head[] = "N:https://geocoding-api.open-meteo.com/v1/search?name=";
 char om_geocoding_tail[] = "&count=1&language=en&format=json";
 
-char city[LINE_LEN];
-char temp_buf[LINE_LEN];
 char pdot = 0;
 
 char increment_dot()
@@ -48,6 +46,8 @@ char increment_dot()
 
 bool om_geocoding(LOCATION *loc, char *city)
 {
+	char temp_buf[LINE_LEN];
+
 	strcpy(omurl, om_geocoding_head);
 	strcat(omurl, city);
 	strcat(omurl, om_geocoding_tail);
@@ -100,7 +100,7 @@ void setup_omurl(LOCATION *loc, char *param) {
 //
 //
 void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
-	char querybuf[LINE_LEN];
+	char querybuf[LINE_LEN * 2];
  
 	pdot = 0;
 // weather 1 query
@@ -208,7 +208,7 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc) {
 //
 void set_forecast1(FORECAST *fc) {
 	char	i;
-	char querybuf[LINE_LEN];
+	char querybuf[LINE_LEN * 2];
 	char prbuf[LINE_LEN];
 
 	for (i = 0; i <= 7; i++)
@@ -245,7 +245,7 @@ void set_forecast1(FORECAST *fc) {
 void set_forecast2(FORECAST *fc)
 {
 	char i;
-	char querybuf[LINE_LEN];
+	char querybuf[LINE_LEN * 2];
 
 	for (i = 0; i <= 7; i++)
 	{

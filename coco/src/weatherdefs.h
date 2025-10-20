@@ -1,6 +1,6 @@
 #ifndef	WEATHERDEFS_H
 #define WEATHERDEFS_H
-#define	LINE_LEN	40
+#define	LINE_LEN	33
 #define	HALF_LEN	20
 #define	QUARTER_LEN	10
 #define DATETIME_LEN 17

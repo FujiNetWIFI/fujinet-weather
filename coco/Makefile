@@ -27,9 +27,10 @@ LIBFLAGS := $(foreach lib, $(LIBS), -L $(dir $(lib)))
 LIBFLAGS += $(foreach lib,$(LIBS),-l$(notdir $(lib)))
 
 CFLAGS += -Wno-const
+#LIMITFLAGS=--org=0E00 --limit=7C00
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(LDFLAGS) $(OBJS) $(LIBFLAGS) 
+	$(CC) $(LIMITFLAGS) $(LDFLAGS) $(OBJS) $(LIBFLAGS) 
 	$(RM) $(TARGET_DISK)
 	$(DECB) dskini $(TARGET_DISK)
 	$(WRITECOCOFILE) $(TARGET_DISK) $(TARGET_EXEC)
