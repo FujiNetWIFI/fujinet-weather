@@ -10,6 +10,7 @@
 #include <coco.h>
 #include <fujinet-fuji.h>
 #include "weatherdefs.h"
+#include "strutil.h"
 #include "weather.h"
 #include "gfx.h"
 #include "broken_clouds.h"
@@ -26,11 +27,13 @@ extern enum unit_option unit_opt;
 extern char disp_page;
 extern char current_screen;
 
-char c_str[] = {0x22, 0x43, 0x00};
-char f_str[] = {0x22, 0x46,0x00};
-char min_str[] = {0x23, 0x24,0x00};
-char max_str[] = {0x26, 0x27,0x00};
-char precip_str[] = {0x28, 0x29, 0x00};
+char current_forecast_page = 0;
+
+char c_str[] = {0x7F, 0x43, 0x00};
+char f_str[] = {0x7F, 0x46,0x00};
+char min_str[] = {'L','o',0x00};
+char max_str[] = {'H','i', 0x00};
+char precip_str[] = {'P', 'r', 0x00};
 
 char *temp_unit[] = {c_str, f_str};
 char *speed_unit[] = {" m/s", "mph"};
@@ -38,9 +41,7 @@ char *vis_unit[] = {" km", " mi"};
 
 char *wind_deg[] = {" N", " NE", " E", " SE", " S", " SW", " W", " NW"};
 
-char current_forecast_page = 0;
-
-void weather(WEATHER *wi)
+void disp_weather(WEATHER *wi)
 {
 	char prbuf[LINE_LEN];
 	char date_buf[DATE_LEN];
@@ -50,12 +51,12 @@ void weather(WEATHER *wi)
 	float visi_tmp_km;
 	float visi_tmp_mi;
 
-	if (current_screen == 1)
+	if (current_screen == SCREEN_WEATHER)
 	{
 		return;
 	}
 
-	current_screen = 1;
+	current_screen = SCREEN_WEATHER;
 	current_forecast_page = 0;
 
 	gfx_cls(CYAN);
@@ -69,22 +70,23 @@ void weather(WEATHER *wi)
 	// 2023-12-31 18:25 is what we display.
 	sprintf(prbuf, "%s %s", date_buf, time_buf);
 	puts(0, 4, PURPLE, prbuf);
+	
 
 	// weather conditions icon
 	put_icon(8, 16, icon_code(wi->icon));
-
+	
 	// Temperature
 	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
 	puts_dbl(40, 16, WHITE, prbuf);
-
+	
 	// Pressure
 	sprintf(prbuf, "%s%s", wi->pressure, " hPa");
 	puts_dbl(40, 40, WHITE, prbuf);
-
+	
 	// Condition
 	decode_description(wi->icon, prbuf);
 	puts(0, 72, WHITE, prbuf);
-
+	
 	// Region
 	if( strlen(wi->state) > 0 )
 	{
@@ -95,22 +97,22 @@ void weather(WEATHER *wi)
 		sprintf(prbuf, "%s, %s", wi->name, wi->country);
 	}
 	puts(0, 84, WHITE, prbuf);
-
+	
 	// Humidity
 	puts(0 + 4, 100, WHITE, "Humidity:");
 	sprintf(prbuf, "%s %%", wi->humidity);
 	puts(40 + 4, 100, PURPLE, prbuf);
-
+	
 	// Dew Point
 	sprintf(prbuf, "%s%s", wi->dew_point, temp_unit[unit_opt]);
 	puts(0 + 4, 112, WHITE, "Dew Point:");
 	puts(44 + 4, 112, PURPLE, prbuf);
-
+	
 	// Clouds
 	puts(0 + 4, 124, WHITE, "Clouds:");
 	sprintf(prbuf, "%s %%", wi->clouds);
 	puts(32 + 4, 124, PURPLE, prbuf);
-
+	
 	// Visibility
 	puts(0 + 4, 136, WHITE, "Visibility:");
 	visi_tmp_km = (double)atol(wi->visibility) / 1000.0;
@@ -125,24 +127,103 @@ void weather(WEATHER *wi)
 	}
 	sprintf(prbuf, "%ld%s", visi, vis_unit[unit_opt]);
 	puts(48 + 4, 136, PURPLE, prbuf);
-
+	
 	// Wind
 	wind_idx = (atoi(wi->wind_deg) % 360) / 45;
 	puts(0 + 4, 148, WHITE, "Wind:");
 	sprintf(prbuf, "%s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
 	puts(24 + 4, 148, PURPLE, prbuf);
-
+	
 	// Sunrise
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunrise + 11, 5);
 	puts(0 + 4, 160, WHITE, "Sunrise:");
 	puts(36 + 4, 160, PURPLE, time_buf);
-
+	
 	// Sunset
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunset + 11, 5);
 	puts(0 + 4 , 172, WHITE, "Sunset:");
 	puts(32 + 4, 172, PURPLE, time_buf);
+}
+
+void disp_forecast(FORECAST *fc, char p)
+{
+	char i;
+	char start_idx;
+	char tdbuf[LINE_LEN];
+	char prbuf[QUARTER_LEN];
+	long localtime;
+	int wind_idx;
+	int y, m, d;
+
+	if (p == current_forecast_page)
+	{
+		return;
+	}
+
+	current_screen = SCREEN_FORECAST;
+	current_forecast_page = p;
+
+	start_idx = (p - 1) * 3;
+	gfx_cls(CYAN);
+
+	//	draw header
+	puts(0, 92, WHITE, max_str);
+	puts(0, 100, WHITE, min_str);
+	puts(0, 112, WHITE, "UV");
+	puts(0, 144, WHITE, precip_str);
+
+	for (i = 0; i <= 2; i++)
+	{
+		// There are only 8 days of forecast data
+		// The last page has only 2 days,
+		// so break out of loop if we exceed available data
+		if ( (start_idx + i) > 7 )
+		{
+			break;
+		}
+
+		parse_date(fc->day[i + start_idx].date, &y, &m, &d);
+
+		//   day
+		sprintf(prbuf, "%2d", d);
+		puts(((i * 10) +5) * 4, 8, WHITE, prbuf);
+
+		//   month
+		puts(((i * 10) +5) * 4, 16, WHITE, monthName(fc->day[i + start_idx].date));
+
+		//   weather icon
+		put_icon((i*10 +4) * 4, 26, icon_code(fc->day[i+start_idx].icon));
+
+		//   weekday
+		puts(((i * 10) +5) * 4, 80, WHITE, dayOfWeek(fc->day[i + start_idx].date));
+
+		// max temp
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_max, temp_unit[unit_opt]);
+		puts(((i * 10) +4) * 4, 92, WHITE, prbuf);
+
+		// min temp
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_min, temp_unit[unit_opt]);
+		puts(((i * 10) +4) * 4, 100, WHITE, prbuf);
+
+		//   uv index max
+		sprintf(prbuf, " %s ", fc->day[i+start_idx].uv_index_max);
+		puts(((i * 10) +4) * 4, 112, WHITE, prbuf);
+
+		// //   wind degree
+		wind_idx = (atoi(fc->day[i+start_idx].wind_deg) % 360) / 45;
+		sprintf(prbuf, "Wind:%s", wind_deg[wind_idx]);
+		puts(((i*10)+3) * 4, 124, WHITE, prbuf);
+
+		//   wind speed
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].wind_speed, speed_unit[unit_opt]);
+		puts(((i*10)+3) * 4, 132, WHITE, prbuf);
+
+		//   precipitation sum
+		sprintf(prbuf, "%s mm", fc->day[i+start_idx].precipitation_sum);
+		puts(((i*10)+5) * 4, 144, WHITE, prbuf);
+	}
 }
 
 //
@@ -307,32 +388,3 @@ byte * icon_code(char code)
 	return (result);
 }
 
-/**
- * @brief Test harness, remove.
- */
-/* int main(void) */
-/* { */
-/*   initCoCoSupport(0); */
-/*   rgb(); */
-/*   width(32); */
-/*   gfx(1); */
-  
-/*   weather("2023","12","31", */
-/* 	  "18","25", */
-/* 	  "   Denton, US   ", */
-/* 	  "53.0*F", */
-/* 	  "  thunderstorm  ", */
-/* 	  "30.60 \"Hg", */
-/* 	  " 61%", */
-/* 	  "39.99*F", */
-/* 	  "  0%", */
-/* 	  "10km", */
-/* 	  " 6.91 mph NE", */
-/* 	  " 7:31AM", */
-/* 	  " 5:30PM", */
-/* 	  thunderstorm); */
-
-/*   while(1); */
-  
-/*   return 0; */
-/* } */

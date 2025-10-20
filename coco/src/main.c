@@ -8,7 +8,6 @@
 #include <cmoc.h>
 #include <coco.h>
 
-#include "init.h"
 #include "weatherdefs.h"
 #include "ipapi.h"
 #include "openmeteo.h"
@@ -29,9 +28,10 @@ typedef enum command {
 } COMMAND;
 
 enum unit_option unit_opt = IMPERIAL;
-char weather_menu[] = "F)orecast R)ef U)nit L)oc Q)uit         ";
-char *forecast_menu[3] = {"???", " N)ext  W)eather                 ",
-                         " B)ack  W)eather                 "};
+char weather_menu[] = "F)orecast R)ef U)nit L)oc Q)uit";
+char *forecast_menu[4] = {"???", " N)ext  W)eather",
+						  " N)ext  B)ack  W)eather",
+						  " B)ack  W)eather"};
 
 int main(void)
 {
@@ -40,7 +40,10 @@ int main(void)
 	char	ch;
 	COMMAND com = COM_REFRESH;
 
-	init();
+	// Initialize graphics and clear screen
+    gfx(1);
+    gfx_cls(CYAN);
+
 	disp_message("  Fetching location data...");
 	get_location(&loc);
 	current = loc;
@@ -53,11 +56,11 @@ int main(void)
 				get_om_info(&loc, &wi, &fc);
 				current_screen = SCREEN_INIT;
 			case COM_WEATHER:		// weather
-				weather(&wi);
+				disp_weather(&wi);
 				disp_menu(weather_menu);
 				break;
 			case COM_FORECAST:		// forecast
-				//disp_forecast(&fc, forecast_page);
+				disp_forecast(&fc, forecast_page);
 				disp_menu(forecast_menu[forecast_page]);
 				break;
 			default:
@@ -106,12 +109,20 @@ int main(void)
 			case 'n':
 			case 'N':
 				com = COM_FORECAST;
-				forecast_page = 2;
+				forecast_page++;
+				if (forecast_page > 3)
+				{
+					forecast_page = 3;
+				}	
 				break;
 			case 'b':
 			case 'B':
 				com = COM_FORECAST;
-				forecast_page = 1;
+				forecast_page--;
+				if (forecast_page < 1)
+				{
+					forecast_page = 1;
+				}
 				break;
 			default:
 				com = COM_NONE;

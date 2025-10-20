@@ -16,6 +16,7 @@
 
 #define KEY_ENTER 0x0D
 #define KEY_LEFT_ARROW 0x08   
+#define KEY_BREAK 0x03
 
 #include "weatherdefs.h"
 

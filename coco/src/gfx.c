@@ -66,7 +66,21 @@ void putc(int x, int y, char c, char ch)
 {
   for (int i = 0; i < 8; i++) // 8 rows
   {
-    unsigned char b = font4x8[(unsigned char)ch][i];
+    byte realch;
+
+    // Font array starts at 0x20,
+    // So skip any value less than that
+    // And subtract 0x20 from any valued passed in. 
+    if (ch < 0x20)
+    {
+      return;
+    }
+    else
+    {
+      realch = ch - 0x20;
+    }
+
+    unsigned char b = font4x8[(unsigned char)realch][i];
 
     for (int j = 0; j < 4; j++) // 4 columns
     {
@@ -87,9 +101,23 @@ void putc(int x, int y, char c, char ch)
  */
 void putc_dbl(int x, int y, char c, char ch)
 {
+    byte realch;
+
+    // Font array starts at 0x20,
+    // So skip any value less than that
+    // And subtract 0x20 from any valued passed in. 
+    if (ch < 0x20)
+    {
+      return;
+    }
+    else
+    {
+      realch = ch - 0x20;
+    }
+
   for (int i = 0; i < 8; i++)
   {
-    unsigned char b = font4x8[(unsigned char)ch][i];
+    unsigned char b = font4x8[(unsigned char)realch][i];
 
     for (int j = 0; j < 4; j++)
     {
@@ -288,7 +316,7 @@ uint8_t input()
   }
 }
 
-void get_line(char *buf, uint8_t max_len, int x, int y)
+bool get_line(char *buf, uint8_t max_len, int x, int y)
 {
   uint8_t c;
   uint8_t i = 0;
@@ -298,10 +326,16 @@ void get_line(char *buf, uint8_t max_len, int x, int y)
 
   do
   {
+    // Fakey little "cursor"
+    putc(x, y, WHITE, '_');
+
     c = input();
 
     if (isprint(c))
     {
+      // Erase cursor
+      putc(x, y, CYAN, '_');
+      // Display character
       putc(x, y, WHITE, c);
       buf[i] = c;
       if (i < max_len - 1)
@@ -315,15 +349,23 @@ void get_line(char *buf, uint8_t max_len, int x, int y)
     {
       if (i)
       {
+        // Erase cursor
+        putc(x, y, CYAN, '_');
         x -=4;
+        // Erase character
         putc(x, y, CYAN, buf[i-1]);
         --i;
         buf[i] = '\0';
       }
     }
+    else if (c == KEY_BREAK)
+    {
+      return false;
+    }
   } while (c != KEY_ENTER);
 
   buf[i] = '\0';
+  return true;
 }
 
 void change_location(LOCATION *loc)
@@ -333,27 +375,37 @@ void change_location(LOCATION *loc)
 
   gfx_cls(CYAN);
   puts(4, PROGRESS_Y, WHITE, "Change location");
-  puts(4, PROGRESS_Y + 8, WHITE, "Input city name, or");
-  puts(4, PROGRESS_Y + 16, WHITE, "ENTER for current location");
-  puts(4, PROGRESS_Y + 24, WHITE, ">");
+  puts(4, PROGRESS_Y + 8, WHITE, "Input city name,");
+  puts(4, PROGRESS_Y + 16, WHITE, "ENTER to detect location, or");
+  puts(4, PROGRESS_Y + 24, WHITE, "BREAK to cancel.");
+  puts(4, PROGRESS_Y + 32, WHITE, ">");
 
-  get_line(input, LINE_LEN - 1, 8, PROGRESS_Y + 24);
+  // If the user hits BREAK, return without doing anything
+  if (get_line(input, LINE_LEN - 1, 8, PROGRESS_Y + 32) == false)
+  {
+    return;
+  }
+  
   if (strlen(input) == 0)
   {
-    *loc = current;
+    // Detect location from IP
+    gfx_cls(CYAN);
+    disp_message("  Fetching location data...");
+	  get_location(loc);
   }
   else
   {
     // Replace spaces with %20 for URL encoding
     puts(4, PROGRESS_Y + 40, WHITE, "Validating city...");
-    replaceSpaces(input);
-    if (!om_geocoding(loc, input))
+    strcpy(linebuf, replaceSpaces(input));
+    if (!om_geocoding(loc, linebuf))
     {
       gfx_cls(CYAN);
-      sprintf(linebuf, "City '%s' was not found.", input);
+      sprintf(linebuf, "City '%s'", input);
       puts(8, PROGRESS_Y, WHITE, linebuf );
-      puts(8, PROGRESS_Y + 8, WHITE, "Using current location.");
-      puts(8, PROGRESS_Y + 16, WHITE, "Press any key to continue.");
+      puts(8, PROGRESS_Y + 8, WHITE, "not found.");
+      puts(8, PROGRESS_Y + 16, WHITE, "Using current location.");
+      puts(8, PROGRESS_Y + 32, WHITE, "Press any key to continue.");
       waitkey(0);
       *loc = current;
     }
