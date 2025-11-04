@@ -5,7 +5,7 @@ BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
 # Set this to the version of FN-LIB you wish to use in this project:
 export CURRENT_TARGET := coco
-export FUJINET_LIB_VERSION := 4.7.9
+export FUJINET_LIB_VERSION := 4.8.1
 
 FLAGS=
 LDFLAGS=-o $(TARGET_EXEC)
@@ -13,11 +13,12 @@ LDFLAGS=-o $(TARGET_EXEC)
 -include ../makefiles/fujinet-lib.mk
 
 CC=cmoc
+ASM=lwasm
 CP=cp
 WRITECOCOFILE=writecocofile
 DECB=decb
 
-SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.asm)
+SRCS := $(shell find $(SRC_DIRS) -name *.cpp -or -name *.c -or -name *.s)
 OBJS := $(SRCS:%=$(BUILD_DIR)/%.o)
 DEPS := $(OBJS:.o=.d)
 INC_DIRS := $(shell find $(SRC_DIRS) -type d)
@@ -27,10 +28,9 @@ LIBFLAGS := $(foreach lib, $(LIBS), -L $(dir $(lib)))
 LIBFLAGS += $(foreach lib,$(LIBS),-l$(notdir $(lib)))
 
 CFLAGS += -Wno-const
-#LIMITFLAGS=--org=0E00 --limit=7C00
 
 $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
-	$(CC) $(LIMITFLAGS) $(LDFLAGS) $(OBJS) $(LIBFLAGS) 
+	$(CC) $(LDFLAGS) $(OBJS) $(LIBFLAGS) 
 	$(RM) $(TARGET_DISK)
 	$(DECB) dskini $(TARGET_DISK)
 	$(WRITECOCOFILE) $(TARGET_DISK) $(TARGET_EXEC)
@@ -40,6 +40,11 @@ $(BUILD_DIR)/$(TARGET_EXEC): $(OBJS)
 $(BUILD_DIR)/%.c.o: %.c $(ALL_TASKS)
 	$(MKDIR_P) $(dir $@)
 	$(CC) $(CPPFLAGS) $(CFLAGS) -o $@ -c $< 
+
+# assy source
+$(BUILD_DIR)/%.s.o: %.s $(ALL_TASKS)
+	$(MKDIR_P) $(dir $@)
+	$(ASM) -fobj --output=$@ $<
 
 .PHONY: clean $(ALL_TASKS)
 
