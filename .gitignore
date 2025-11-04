@@ -81,3 +81,5 @@ adam/weather_BOOTSTRAP.bin
 adam/weather.ddp
 test/adam/.clang-format
 vic20-rom/weather*
+coco/weather.bin
+coco/weather.dsk
