@@ -9,88 +9,47 @@ int isprint(int c)
 {
     // Check if c falls within the ASCII range for printable characters (0x20 to 0x7E)
     // This range includes space (0x20) up to tilde (0x7E).
-    if (c >= 0x20 && c <= 0x7E)
-    {
-        return 1; // It is a printable character
-    }
-    else
-    {
-        return 0; // It is not a printable character
-    }
+    return (c >= 0x20 && c <= 0x7E);
 }
 
 void truncate_at_first_non_printable(char *str)
 {
-    if (str == NULL)
-    {
-        return; // Handle null pointer case
-    }
+    if (!str) return;
 
-    int i = 0;
-    while (str[i] != '\0')
+    while (*str)
     {
-        if (!isprint((unsigned char)str[i]))
+        if (!isprint((unsigned char)*str))
         {
-            str[i] = '\0'; // Truncate the string
-            return;
+            *str = '\0';
+            break;
         }
-        i++;
+        str++;
     }
 }
 
 // Function to replace spaces with "%20" in a C-style string
 // returns a pointer to a temporary buffer containing the modified string
-char * replaceSpaces(char *str)
+char *replaceSpaces(const char *str)
 {
-    int trueLength = 0;
-    memset(tmp_buf, 0, sizeof(tmp_buf));
+    char *dst = tmp_buf;
 
-    if (str == NULL)
+    if (!str) return NULL;
+
+    while (*str)
     {
-        return NULL; 
-    }
-
-    trueLength = strlen(str);
-
-    if (trueLength == 0)
-    {
-        return tmp_buf ; 
-    }   
-
-    strncpy(tmp_buf, str, trueLength);
-
-    int spaceCount = 0;
-    for (int i = 0; i < trueLength; i++)
-    {
-        if (tmp_buf[i] == ' ')
+        if (*str == ' ')
         {
-            spaceCount++;
-        }
-    }
-
-    int newLength = trueLength + spaceCount * 2; // Each space becomes "%20" (3 chars, 2 extra)
-
-    // Set null terminator at the new end
-    tmp_buf[newLength] = '\0';
-
-    // Iterate from the end of the original string backwards
-    // and copy characters to their new positions
-    for (int i = trueLength - 1; i >= 0; i--)
-    {
-        if (str[i] == ' ')
-        {
-            tmp_buf[newLength - 1] = '0';
-            tmp_buf[newLength - 2] = '2';
-            tmp_buf[newLength - 3] = '%';
-            newLength -= 3;
+            *dst++ = '%';
+            *dst++ = '2';
+            *dst++ = '0';
         }
         else
         {
-            tmp_buf[newLength - 1] = str[i];
-            newLength--;
+            *dst++ = *str;
         }
+        str++;
     }
-    
+    *dst = '\0';
     return tmp_buf;
 }
 

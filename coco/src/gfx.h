@@ -19,6 +19,7 @@
 #define KEY_BREAK 0x03
 
 #include "weatherdefs.h"
+#include "fujinet-fuji.h"
 
 /**
  * @brief set pixel at x,y to color c
@@ -34,17 +35,9 @@ void pset(int x, int y,unsigned char c);
  * @param y vertical position (0-191)
  * @param c Color (0-3)
  * @param ch Character to put (0-127)
+ * @param dbl Make the character double height
  */
-void putc(int x, int y, char c, char ch);
-
-/**
- * @brief Put character ch in font at x,y with color c, double height.
- * @param x horizontal position (0-127)
- * @param y vertical position (0-191)
- * @param c Color (0-3)
- * @param ch Character to put (0-127)
- */
-void putc_dbl(int x, int y, char c, char ch);
+void putc(int x, int y, char c, char ch, bool dbl);
 
 /**
  * @brief Put string s using putc at x,y with color c
@@ -52,17 +45,9 @@ void putc_dbl(int x, int y, char c, char ch);
  * @param y vertical position (0-191)
  * @param c Color (0-3)
  * @param s NULL terminated string to place on graphics screen
+ * @param dbl Make the characters double height
  */
-void puts(int x, int y, char c, const char *s);
-
-/**
- * @brief Put string s using putc at x,y with color c, double height.
- * @param x horizontal position (0-127)
- * @param y vertical position (0-191)
- * @param c Color (0-3)
- * @param s NULL terminated string to place on graphics screen
- */
-void puts_dbl(int x, int y, char c, const char *s);
+void puts(int x, int y, char c, const char *s, bool dbl);
 
 /**
  * @brief place icon on 8x8 boundary

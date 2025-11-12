@@ -36,8 +36,9 @@ char max_str[] = {'H','i', 0x00};
 char precip_str[] = {'P', 'r', 0x00};
 
 char *temp_unit[] = {c_str, f_str};
-char *speed_unit[] = {" m/s", "mph"};
+char *speed_unit[] = {" m/s", " mph"};
 char *vis_unit[] = {" km", " mi"};
+char *precip_unit[] = {" mm", " in"};
 
 char *wind_deg[] = {" N", " NE", " E", " SE", " S", " SW", " W", " NW"};
 
@@ -48,8 +49,6 @@ void disp_weather(WEATHER *wi)
 	char time_buf[TIME_LEN];
 	int wind_idx;
 	long visi;
-	float visi_tmp_km;
-	float visi_tmp_mi;
 
 	if (current_screen == SCREEN_WEATHER)
 	{
@@ -69,30 +68,29 @@ void disp_weather(WEATHER *wi)
 
 	// 2023-12-31 18:25 is what we display.
 	sprintf(prbuf, "%s %s", date_buf, time_buf);
-	puts(0, 4, PURPLE, prbuf);
+	puts(0, 4, PURPLE, prbuf, false);
 	
-
 	// weather conditions icon
 	put_icon(8, 16, icon_code(wi->icon));
 	
 	// Temperature
 	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
-	puts_dbl(40, 16, WHITE, prbuf);
+	puts(40, 16, WHITE, prbuf, true);
 
 
 	// Apparent temp
-	puts(72, 16, WHITE, "Feels");
-	puts(72, 24, WHITE, "Like:");
+	puts(72, 16, WHITE, "Feels", false);
+	puts(72, 24, WHITE, "Like:", false);
 	sprintf(prbuf, "%s%s", wi->feels_like, temp_unit[unit_opt]);
-	puts_dbl(96, 16, WHITE, prbuf);
+	puts(96, 16, WHITE, prbuf, true);
 	
 	// Pressure
 	sprintf(prbuf, "%s%s", wi->pressure, " hPa");
-	puts_dbl(40, 40, WHITE, prbuf);
+	puts(40, 40, WHITE, prbuf, true);
 	
 	// Condition
 	decode_description(wi->icon, prbuf);
-	puts(0, 72, WHITE, prbuf);
+	puts(0, 72, WHITE, prbuf, false);
 	
 	// Region
 	if( strlen(wi->state) > 0 )
@@ -103,55 +101,56 @@ void disp_weather(WEATHER *wi)
 	{
 		sprintf(prbuf, "%s, %s", wi->name, wi->country);
 	}
-	puts(0, 84, WHITE, prbuf);
+	puts(0, 84, WHITE, prbuf, false);
 	
 	// Humidity
-	puts(0 + 4, 100, WHITE, "Humidity:");
+	puts(0 + 4, 100, WHITE, "Humidity:", false);
 	sprintf(prbuf, "%s %%", wi->humidity);
-	puts(40 + 4, 100, PURPLE, prbuf);
+	puts(40 + 4, 100, PURPLE, prbuf, false);
 	
 	// Dew Point
 	sprintf(prbuf, "%s%s", wi->dew_point, temp_unit[unit_opt]);
-	puts(0 + 4, 112, WHITE, "Dew Point:");
-	puts(44 + 4, 112, PURPLE, prbuf);
+	puts(0 + 4, 112, WHITE, "Dew Point:", false);
+	puts(44 + 4, 112, PURPLE, prbuf, false);
 	
 	// Clouds
-	puts(0 + 4, 124, WHITE, "Clouds:");
+	puts(0 + 4, 124, WHITE, "Clouds:", false);
 	sprintf(prbuf, "%s %%", wi->clouds);
-	puts(32 + 4, 124, PURPLE, prbuf);
+	puts(32 + 4, 124, PURPLE, prbuf, false);
 	
 	// Visibility
-	puts(0 + 4, 136, WHITE, "Visibility:");
-	visi_tmp_km = (double)atol(wi->visibility) / 1000.0;
-	if (unit_opt == METRIC) 
+	puts(0 + 4, 136, WHITE, "Visibility:", false);
+	visi = (atol(wi->visibility));
+	if (unit_opt == METRIC)
 	{
-		visi = (long) (visi_tmp_km + 0.5); // round to nearest
+		// Convert meters to kilometers, rounded to nearest
+		visi = (visi + 500) / 1000;
 	}
-	else 
+	else
 	{
-		visi_tmp_mi = visi_tmp_km * 0.621371;
-		visi = (long) (visi_tmp_mi + 0.5); // round to nearest
+		// Convert feet to miles, rounded to nearest
+		visi = (visi + 2640) / 5280;
 	}
 	sprintf(prbuf, "%ld%s", visi, vis_unit[unit_opt]);
-	puts(48 + 4, 136, PURPLE, prbuf);
+	puts(48 + 4, 136, PURPLE, prbuf, false);
 	
 	// Wind
 	wind_idx = (atoi(wi->wind_deg) % 360) / 45;
-	puts(0 + 4, 148, WHITE, "Wind:");
+	puts(0 + 4, 148, WHITE, "Wind:", false);
 	sprintf(prbuf, "%s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
-	puts(24 + 4, 148, PURPLE, prbuf);
+	puts(24 + 4, 148, PURPLE, prbuf, false);
 	
 	// Sunrise
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunrise + 11, 5);
-	puts(0 + 4, 160, WHITE, "Sunrise:");
-	puts(36 + 4, 160, PURPLE, time_buf);
+	puts(0 + 4, 160, WHITE, "Sunrise:", false);
+	puts(36 + 4, 160, PURPLE, time_buf, false);
 	
 	// Sunset
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunset + 11, 5);
-	puts(0 + 4 , 172, WHITE, "Sunset:");
-	puts(32 + 4, 172, PURPLE, time_buf);
+	puts(0 + 4 , 172, WHITE, "Sunset:", false);
+	puts(32 + 4, 172, PURPLE, time_buf, false);
 }
 
 void disp_forecast(FORECAST *fc, char p)
@@ -176,10 +175,10 @@ void disp_forecast(FORECAST *fc, char p)
 	gfx_cls(CYAN);
 
 	//	draw header
-	puts(0, 92, WHITE, max_str);
-	puts(0, 100, WHITE, min_str);
-	puts(0, 112, WHITE, "UV");
-	puts(0, 144, WHITE, precip_str);
+	puts(0, 92, WHITE, max_str, false);
+	puts(0, 100, WHITE, min_str, false);
+	puts(0, 112, WHITE, "UV", false);
+	puts(0, 144, WHITE, precip_str, false);
 
 	for (i = 0; i <= 2; i++)
 	{
@@ -195,41 +194,41 @@ void disp_forecast(FORECAST *fc, char p)
 
 		//   day
 		sprintf(prbuf, "%2d", d);
-		puts(((i * 10) +5) * 4, 8, WHITE, prbuf);
+		puts(((i * 10) +5) * 4, 8, WHITE, prbuf, false);
 
 		//   month
-		puts(((i * 10) +5) * 4, 16, WHITE, monthName(fc->day[i + start_idx].date));
+		puts(((i * 10) +5) * 4, 16, WHITE, monthName(fc->day[i + start_idx].date), false);
 
 		//   weather icon
 		put_icon((i*10 +4) * 4, 26, icon_code(fc->day[i+start_idx].icon));
 
 		//   weekday
-		puts(((i * 10) +5) * 4, 80, WHITE, dayOfWeek(fc->day[i + start_idx].date));
+		puts(((i * 10) +5) * 4, 80, WHITE, dayOfWeek(fc->day[i + start_idx].date), false);
 
 		// max temp
 		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_max, temp_unit[unit_opt]);
-		puts(((i * 10) +4) * 4, 92, WHITE, prbuf);
+		puts(((i * 10) +4) * 4, 92, WHITE, prbuf, false);
 
 		// min temp
 		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_min, temp_unit[unit_opt]);
-		puts(((i * 10) +4) * 4, 100, WHITE, prbuf);
+		puts(((i * 10) +4) * 4, 100, WHITE, prbuf, false);
 
 		//   uv index max
 		sprintf(prbuf, " %s ", fc->day[i+start_idx].uv_index_max);
-		puts(((i * 10) +4) * 4, 112, WHITE, prbuf);
+		puts(((i * 10) +4) * 4, 112, WHITE, prbuf, false);
 
 		// //   wind degree
 		wind_idx = (atoi(fc->day[i+start_idx].wind_deg) % 360) / 45;
 		sprintf(prbuf, "Wind:%s", wind_deg[wind_idx]);
-		puts(((i*10)+3) * 4, 124, WHITE, prbuf);
+		puts(((i*10)+3) * 4, 124, WHITE, prbuf, false);
 
 		//   wind speed
 		sprintf(prbuf, "%s%s", fc->day[i+start_idx].wind_speed, speed_unit[unit_opt]);
-		puts(((i*10)+3) * 4, 132, WHITE, prbuf);
+		puts(((i*10)+3) * 4, 132, WHITE, prbuf, false);
 
 		//   precipitation sum
-		sprintf(prbuf, "%s mm", fc->day[i+start_idx].precipitation_sum);
-		puts(((i*10)+5) * 4, 144, WHITE, prbuf);
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].precipitation_sum, precip_unit[unit_opt]);
+		puts(((i*10)+5) * 4, 144, WHITE, prbuf, false);
 	}
 }
 
