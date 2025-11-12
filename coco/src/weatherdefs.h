@@ -31,7 +31,7 @@ struct weather_info {
 	char	humidity[QUARTER_LEN];
 	char	dew_point[QUARTER_LEN];
 	char	clouds[QUARTER_LEN];
-	char	visibility[QUARTER_LEN];
+	char	visibility[HALF_LEN];
 	char	wind_speed[QUARTER_LEN];
 	char	wind_deg[QUARTER_LEN];
 };
