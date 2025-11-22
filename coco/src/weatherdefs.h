@@ -19,7 +19,7 @@ struct weather_info {
 	char	name[HALF_LEN];
 	char	state[HALF_LEN];
 	char	country[HALF_LEN];
-	char	timezone[LINE_LEN];
+	char	timezone[QUARTER_LEN];
 	char    datetime[DATETIME_LEN];
 	long	tz;					// time-zone offset
 	char	icon;

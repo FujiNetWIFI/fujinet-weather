@@ -34,22 +34,22 @@ void get_location(LOCATION *loc)
 
 	memset(buf, 0, LINE_LEN);
 
-	network_json_query_trim(ip_url, "/status", buf);
+	network_json_query(ip_url, "/status", buf);
 	if (strcmp(buf, "success") != 0)
 	{
 		memset(buf, 0, LINE_LEN);
-		network_json_query_trim(ip_url, "/message", buf);
+		network_json_query(ip_url, "/message", buf);
 		network_close(ip_url);
 		sprintf(message, "ip-api(%s)", buf);
 		err = 0xff; // set unknown error
 		handle_err(message);
 	}
 
-	network_json_query_trim(ip_url, "/city", loc->city);
-	network_json_query_trim(ip_url, "/countryCode", loc->countryCode);
-	network_json_query_trim(ip_url, "/lon", loc->lon);
-	network_json_query_trim(ip_url, "/regionName", loc->state);
-	network_json_query_trim(ip_url, "/lat", loc->lat);
+	network_json_query(ip_url, "/city", loc->city);
+	network_json_query(ip_url, "/countryCode", loc->countryCode);
+	network_json_query(ip_url, "/lon", loc->lon);
+	network_json_query(ip_url, "/regionName", loc->state);
+	network_json_query(ip_url, "/lat", loc->lat);
 
 	network_close(ip_url);
 }
