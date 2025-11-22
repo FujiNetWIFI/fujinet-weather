@@ -67,7 +67,7 @@ void disp_weather(WEATHER *wi)
 	time_buf[TIME_LEN-1] = 0x00;
 
 	// 2023-12-31 18:25 is what we display.
-	sprintf(prbuf, "%s %s", date_buf, time_buf);
+	sprintf(prbuf, "%s %s %s", date_buf, time_buf, wi->timezone);
 	puts(0, 4, PURPLE, prbuf, false);
 	
 	// weather conditions icon
@@ -228,7 +228,7 @@ void disp_forecast(FORECAST *fc, char p)
 
 		//   precipitation sum
 		sprintf(prbuf, "%s%s", fc->day[i+start_idx].precipitation_sum, precip_unit[unit_opt]);
-		puts(((i*10)+5) * 4, 144, WHITE, prbuf, false);
+		puts(((i*10)+3) * 4, 144, WHITE, prbuf, false);
 	}
 }
 

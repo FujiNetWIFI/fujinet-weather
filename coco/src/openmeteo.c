@@ -61,16 +61,16 @@ bool om_geocoding(LOCATION *loc, char *city)
 	handle_err("open meteo geocoding parse");
 
 	memset(temp_buf, 0, LINE_LEN);
-	network_json_query_trim(omurl, "/results/0/name", temp_buf);
+	network_json_query(omurl, "/results/0/name", temp_buf);
 	if (temp_buf == NULL || strlen(temp_buf) == 0)
 	{
 		return false;
 	}
 	strcpy(loc->city, temp_buf);
-	network_json_query_trim(omurl, "/results/0/longitude", loc->lon);
-	network_json_query_trim(omurl, "/results/0/latitude", loc->lat);
-	network_json_query_trim(omurl, "/results/0/country_code", loc->countryCode);
-	network_json_query_trim(omurl, "/results/0/admin1", temp_buf);
+	network_json_query(omurl, "/results/0/longitude", loc->lon);
+	network_json_query(omurl, "/results/0/latitude", loc->lat);
+	network_json_query(omurl, "/results/0/country_code", loc->countryCode);
+	network_json_query(omurl, "/results/0/admin1", temp_buf);
 
 	// The API sometimes returns the city name in admin1.
 	// If so, ignore it.
@@ -134,22 +134,19 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	strcpy(wi->country, loc->countryCode);
 
 	//  date & time
-	network_json_query_trim(omurl, "/current/time", querybuf);
+	network_json_query(omurl, "/current/time", querybuf);
 	strcpy(wi->datetime, querybuf);
-	//  timezone(offset)
-	network_json_query_trim(omurl, "/utc_offset_seconds", querybuf);
-	wi->tz = atol(querybuf);
-	// timezone
-	network_json_query_trim(omurl, "/timezone", wi->timezone);
+	// timezone abbreviation
+	network_json_query(omurl, "/timezone_abbreviation", wi->timezone);
 	//  pressure
-	network_json_query_trim(omurl, "/current/surface_pressure", wi->pressure);
+	network_json_query(omurl, "/current/surface_pressure", wi->pressure);
 	//  humidity
-	network_json_query_trim(omurl, "/current/relative_humidity_2m", wi->humidity);
+	network_json_query(omurl, "/current/relative_humidity_2m", wi->humidity);
 	// weather code (icon)
-	network_json_query_trim(omurl, "/current/weather_code", querybuf);
+	network_json_query(omurl, "/current/weather_code", querybuf);
 	wi->icon = (char)atoi(querybuf);
 	//  clouds
-	network_json_query_trim(omurl, "/current/cloud_cover", wi->clouds);
+	network_json_query(omurl, "/current/cloud_cover", wi->clouds);
 
 	network_close(omurl); // of weather1
 
@@ -165,13 +162,13 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	handle_err("omurl parse 2");
 
 	//  temperature
-	network_json_query_trim(omurl, "/current/temperature_2m", wi->temp);
+	network_json_query(omurl, "/current/temperature_2m", wi->temp);
 	//  feels_like
-	network_json_query_trim(omurl, "/current/apparent_temperature", wi->feels_like);
+	network_json_query(omurl, "/current/apparent_temperature", wi->feels_like);
 	//  wind_speed
-	network_json_query_trim(omurl, "/current/wind_speed_10m", wi->wind_speed);
+	network_json_query(omurl, "/current/wind_speed_10m", wi->wind_speed);
 	//  wind_deg
-	err = network_json_query_trim(omurl, "/current/wind_direction_10m", wi->wind_deg);
+	err = network_json_query(omurl, "/current/wind_direction_10m", wi->wind_deg);
 
 	network_close(omurl); // of weather2
 
@@ -187,9 +184,9 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	handle_err("omurl parse 3");
 
 	//  dew_point
-	network_json_query_trim(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
+	network_json_query(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
 	//  visibility
-	network_json_query_trim(omurl, "/hourly/visibility/0", wi->visibility);
+	network_json_query(omurl, "/hourly/visibility/0", wi->visibility);
 	
 	network_close(omurl); // of weather3
 
@@ -210,10 +207,6 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	set_forecast(fc, 1);
 	network_close(omurl); // of forecast part 1
 
-	//  copy today's sunrise/sunset from forecat data to weather data
-	strcpy(wi->sunrise, fc->day[0].sunrise);
-	strcpy(wi->sunset, fc->day[0].sunset);
-
 	//  part 2
 	setup_omurl(loc, om_tail_forecast2, true);
 
@@ -228,6 +221,10 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	progress_dots(increment_dot());
 
 	set_forecast(fc, 2);
+
+	//  copy today's sunrise/sunset from forecast data to weather data
+	strcpy(wi->sunrise, fc->day[0].sunrise);
+	strcpy(wi->sunset, fc->day[0].sunset);
 
 	network_close(omurl); // of forecast part 2
 
@@ -265,39 +262,39 @@ void set_forecast(FORECAST *fc, int segment)
 			case 1:
 				// date & time
 				sprintf(querybuf, "/daily/time/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].date);
+				network_json_query(omurl, querybuf, fc->day[i].date);
 				// temp min
 				sprintf(querybuf, "/daily/temperature_2m_min/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].temp_min);
+				network_json_query(omurl, querybuf, fc->day[i].temp_min);
 				// temp max
 				sprintf(querybuf, "/daily/temperature_2m_max/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].temp_max);
+				network_json_query(omurl, querybuf, fc->day[i].temp_max);
 				// icon
 				sprintf(querybuf, "/daily/weather_code/%d", i);
-				network_json_query_trim(omurl, querybuf, prbuf);
+				network_json_query(omurl, querybuf, prbuf);
 				fc->day[i].icon = (char)atoi(prbuf);
 				break;
 			case 2:
 				// sunrise
 				sprintf(querybuf, "/daily/sunrise/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].sunrise);
+				network_json_query(omurl, querybuf, fc->day[i].sunrise);
 				// sunset
 				sprintf(querybuf, "/daily/sunset/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].sunset);
+				network_json_query(omurl, querybuf, fc->day[i].sunset);
 				// wind  speed
 				sprintf(querybuf, "/daily/wind_speed_10m_max/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].wind_speed);
+				network_json_query(omurl, querybuf, fc->day[i].wind_speed);
 				// wind  deg
 				sprintf(querybuf, "/daily/wind_direction_10m_dominant/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].wind_deg);
+				network_json_query(omurl, querybuf, fc->day[i].wind_deg);
 				break;
 			case 3:
 				// precipitation sum
 				sprintf(querybuf, "/daily/precipitation_sum/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].precipitation_sum);
+				network_json_query(omurl, querybuf, fc->day[i].precipitation_sum);
 				// uv index  max
 				sprintf(querybuf, "/daily/uv_index_max/%d", i);
-				network_json_query_trim(omurl, querybuf, fc->day[i].uv_index_max);
+				network_json_query(omurl, querybuf, fc->day[i].uv_index_max);
 				break;
 		}
 		progress_dots(increment_dot());

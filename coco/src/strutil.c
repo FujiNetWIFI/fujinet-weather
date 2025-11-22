@@ -5,28 +5,6 @@
 
 char tmp_buf[HALF_LEN * 2];
 
-int isprint(int c)
-{
-    // Check if c falls within the ASCII range for printable characters (0x20 to 0x7E)
-    // This range includes space (0x20) up to tilde (0x7E).
-    return (c >= 0x20 && c <= 0x7E);
-}
-
-void truncate_at_first_non_printable(char *str)
-{
-    if (!str) return;
-
-    while (*str)
-    {
-        if (!isprint((unsigned char)*str))
-        {
-            *str = '\0';
-            break;
-        }
-        str++;
-    }
-}
-
 // Function to replace spaces with "%20" in a C-style string
 // returns a pointer to a temporary buffer containing the modified string
 char *replaceSpaces(const char *str)
@@ -117,10 +95,4 @@ const char *monthName(char *date)
 
     return result;
 }
-
-int16_t network_json_query_trim(const char *devicespec, const char *query, char *s)
-{
-    int16_t ret = network_json_query(devicespec, query, s);
-    truncate_at_first_non_printable(s);
-    return ret;
-}  
+  

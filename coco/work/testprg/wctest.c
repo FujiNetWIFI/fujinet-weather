@@ -80,7 +80,7 @@ void truncate_at_first_non_printable(char *str)
     }
 }
 
-int16_t network_json_query_trim(const char *devicespec, const char *query, char *s)
+int16_t network_json_query(const char *devicespec, const char *query, char *s)
 {
     int16_t ret = network_json_query(devicespec, query, s);
     truncate_at_first_non_printable(s);
@@ -130,7 +130,7 @@ void get_location(LOCATION *loc)
     memset(buf, 0, LINE_LEN);
 
     printf("ip-api query status\n");
-    network_json_query_trim(ip_url, "/status", buf);
+    network_json_query(ip_url, "/status", buf);
     sprintf(linebuf, "status: %s", buf);
     printstr(linebuf);
     putchar('\n');
@@ -138,29 +138,29 @@ void get_location(LOCATION *loc)
     if (strcmp(buf, "success") != 0)
     {
         memset(buf, 0, LINE_LEN);
-        network_json_query_trim(ip_url, "/message", buf);
+        network_json_query(ip_url, "/message", buf);
         network_close(ip_url);
         sprintf(message, "ip-api(%s)", buf);
         err = 0xff; // set unknown error
     }
 
     printf("ip-api query city\n");
-    network_json_query_trim(ip_url, "/city", loc->city);
+    network_json_query(ip_url, "/city", loc->city);
     sprintf(linebuf, "city; %s", loc->city);
     printstr(linebuf);
     putchar('\n');
     printf("ip-api query countryCode\n");
-    network_json_query_trim(ip_url, "/countryCode", loc->countryCode);
+    network_json_query(ip_url, "/countryCode", loc->countryCode);
     sprintf(linebuf, "countryCode: %s", loc->countryCode);
     printstr(linebuf);
     putchar('\n');
     printf("ip-api query lon\n");
-    network_json_query_trim(ip_url, "/lon", loc->lon);
+    network_json_query(ip_url, "/lon", loc->lon);
     sprintf(linebuf, "lon: %s", loc->lon);
     printstr(linebuf);
     putchar('\n');
     printf("ip-api query lat\n");
-    network_json_query_trim(ip_url, "/lat", loc->lat);
+    network_json_query(ip_url, "/lat", loc->lat);
     sprintf(linebuf, "lat: %s", loc->lat);
     printstr(linebuf);
     putchar('\n');
@@ -195,7 +195,7 @@ void set_forecast1(FORECAST *fc)
         // date & time
         sprintf(querybuf, "/daily/time/%d", i);
         printf("query date (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, prbuf);
+        network_json_query(omurl, querybuf, prbuf);
         sprintf(linebuf, "date: %s", prbuf);
         printstr(linebuf);
         putchar('\n');
@@ -203,7 +203,7 @@ void set_forecast1(FORECAST *fc)
         // sunrise
         sprintf(querybuf, "/daily/sunrise/%d", i);
         printf("query sunrise (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, prbuf);
+        network_json_query(omurl, querybuf, prbuf);
         sprintf(linebuf, "sunrise: %s", prbuf);
         printstr(linebuf);
         putchar('\n');
@@ -211,7 +211,7 @@ void set_forecast1(FORECAST *fc)
         // sunset
         sprintf(querybuf, "/daily/sunset/%d", i);
         printf("query sunset (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, prbuf);
+        network_json_query(omurl, querybuf, prbuf);
         sprintf(linebuf, "sunset: %s", prbuf);
         printstr(linebuf);
         putchar('\n');  
@@ -219,21 +219,21 @@ void set_forecast1(FORECAST *fc)
         // temp min
         sprintf(querybuf, "/daily/temperature_2m_min/%d", i);
         printf("query temp min (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, fc->day[i].temp_min);
+        network_json_query(omurl, querybuf, fc->day[i].temp_min);
         sprintf(linebuf, "temp_min: %s", fc->day[i].temp_min);
         printstr(linebuf);
         putchar('\n');
         // temp max
         sprintf(querybuf, "/daily/temperature_2m_max/%d", i);
         printf("query temp max (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, fc->day[i].temp_max);
+        network_json_query(omurl, querybuf, fc->day[i].temp_max);
         sprintf(linebuf, "temp_max: %s", fc->day[i].temp_max);
         printstr(linebuf);
         putchar('\n');
         // icon
         sprintf(querybuf, "/daily/weather_code/%d", i);
         printf("query weather_code (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, prbuf);
+        network_json_query(omurl, querybuf, prbuf);
         sprintf(linebuf, "weather_code: %s", prbuf);
         printstr(linebuf);
         putchar('\n');
@@ -253,28 +253,28 @@ void set_forecast2(FORECAST *fc)
         // precipitation sum
         sprintf(querybuf, "/daily/precipitation_sum/%d", i);
         printf("query precipitation_sum (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, fc->day[i].precipitation_sum);
+        network_json_query(omurl, querybuf, fc->day[i].precipitation_sum);
         sprintf(linebuf, "precipitation_sum: %s", fc->day[i].precipitation_sum);
         printstr(linebuf);
         putchar('\n');
         // uv index  max
         sprintf(querybuf, "/daily/uv_index_max/%d", i);
         printf("query uv_index_max (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, fc->day[i].uv_index_max);
+        network_json_query(omurl, querybuf, fc->day[i].uv_index_max);
         sprintf(linebuf, "uv_index_max: %s", fc->day[i].uv_index_max);
         printstr(linebuf);
         putchar('\n');
         // wind  speed
         sprintf(querybuf, "/daily/wind_speed_10m_max/%d", i);
         printf("query wind_speed_10m_max (day %d) %s\n", i, querybuf);  
-        network_json_query_trim(omurl, querybuf, fc->day[i].wind_speed);
+        network_json_query(omurl, querybuf, fc->day[i].wind_speed);
         sprintf(linebuf, "wind_speed_10m_max: %s", fc->day[i].wind_speed);
         printstr(linebuf);
         putchar('\n');
         // wind  deg
         sprintf(querybuf, "/daily/wind_direction_10m_dominant/%d", i);
         printf("query wind_direction_10m_dominant (day %d) %s\n", i, querybuf);
-        network_json_query_trim(omurl, querybuf, fc->day[i].wind_deg);
+        network_json_query(omurl, querybuf, fc->day[i].wind_deg);
         sprintf(linebuf, "wind_direction_10m_dominant: %s", fc->day[i].wind_deg);
         printstr(linebuf);
         putchar('\n');
@@ -311,46 +311,46 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 
     //  date & time
     putstr("query time\n", 11);
-    network_json_query_trim(omurl, "/current/time", querybuf);
+    network_json_query(omurl, "/current/time", querybuf);
     sprintf(linebuf, "time: %s", querybuf);
     printstr(linebuf);
     putchar('\n');
     strcpy(wi->datetime, querybuf);
     //  timezone(offset)
     putstr("query utc_offset_seconds\n", 25);
-    network_json_query_trim(omurl, "/utc_offset_seconds", querybuf);
+    network_json_query(omurl, "/utc_offset_seconds", querybuf);
     sprintf(linebuf, "utc_offset_seconds: %s", querybuf);
     printstr(linebuf);
     putchar('\n');
     wi->tz = atol(querybuf);
     // timezone
     putstr("query timezone\n", 15);
-    network_json_query_trim(omurl, "/timezone", wi->timezone);
+    network_json_query(omurl, "/timezone", wi->timezone);
     sprintf(linebuf, "timezone: %s", wi->timezone);
     printstr(linebuf);
     putchar('\n');
     //  pressure
     putstr("query surface_pressure\n", 23);
-    network_json_query_trim(omurl, "/current/surface_pressure", wi->pressure);
+    network_json_query(omurl, "/current/surface_pressure", wi->pressure);
     sprintf(linebuf, "surface_pressure: %s", wi->pressure);
     printstr(linebuf);
     putchar('\n');
     //  humidity
     putstr("query relative_humidity_2m\n", 28);
-    network_json_query_trim(omurl, "/current/relative_humidity_2m", wi->humidity);
+    network_json_query(omurl, "/current/relative_humidity_2m", wi->humidity);
     sprintf(linebuf, "relative_humidity_2m: %s", wi->humidity);
     printstr(linebuf);
     putchar('\n');
     // weather code (icon)
     putstr("query weather_code\n", 19);
-    network_json_query_trim(omurl, "/current/weather_code", querybuf);
+    network_json_query(omurl, "/current/weather_code", querybuf);
     sprintf(linebuf, "weather_code: %s", querybuf);
     printstr(linebuf);
     putchar('\n');
     wi->icon = (char)atoi(querybuf);
     //  clouds
     putstr("query cloud_cover\n", 19);
-    network_json_query_trim(omurl, "/current/cloud_cover", wi->clouds);
+    network_json_query(omurl, "/current/cloud_cover", wi->clouds);
     sprintf(linebuf, "cloud_cover: %s", wi->clouds);
     printstr(linebuf);
     putchar('\n');
@@ -378,41 +378,41 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 
     //  temperature
     putstr("query temperature_2m\n", 21);
-    network_json_query_trim(omurl, "/current/temperature_2m", wi->temp);
+    network_json_query(omurl, "/current/temperature_2m", wi->temp);
     sprintf(linebuf, "temperature_2m: %s", wi->temp);
     printstr(linebuf);
     putchar('\n');
     //  feels_like
     putstr("query apparent_temperature\n", 27);
-    network_json_query_trim(omurl, "/current/apparent_temperature", wi->feels_like);
+    network_json_query(omurl, "/current/apparent_temperature", wi->feels_like);
     sprintf(linebuf, "apparent_temperature: %s", wi->feels_like);
     printstr(linebuf);
     putchar('\n');
 
     //  dew_point
     putstr("query dew_point_2m\n", 19);
-    network_json_query_trim(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
+    network_json_query(omurl, "/hourly/dew_point_2m/0", wi->dew_point);
     sprintf(linebuf, "dew_point_2m: %s", wi->dew_point);
     printstr(linebuf);
     putchar('\n');
 
     //  visibility
     putstr("query visibility\n", 17);
-    network_json_query_trim(omurl, "/hourly/visibility/0", wi->visibility);
+    network_json_query(omurl, "/hourly/visibility/0", wi->visibility);
     sprintf(linebuf, "visibility: %s", wi->visibility);
     printstr(linebuf);
     putchar('\n');
 
     //  wind_speed
     putstr("query wind_speed_10m\n", 21);
-    network_json_query_trim(omurl, "/current/wind_speed_10m", wi->wind_speed);
+    network_json_query(omurl, "/current/wind_speed_10m", wi->wind_speed);
     sprintf(linebuf, "wind_speed_10m: %s", wi->wind_speed);
     printstr(linebuf);
     putchar('\n');
 
     //  wind_deg
     putstr("query wind_direction_10m\n", 25);
-    err = network_json_query_trim(omurl, "/current/wind_direction_10m", wi->wind_deg);
+    err = network_json_query(omurl, "/current/wind_direction_10m", wi->wind_deg);
     sprintf(linebuf, "wind_direction_10m: %s", wi->wind_deg);
     printstr(linebuf);
     putchar('\n');
