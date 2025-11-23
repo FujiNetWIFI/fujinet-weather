@@ -13,8 +13,9 @@
 // returns a pointer to a temporary buffer containing the modified string
 char * replaceSpaces(char *str);
 
-// Returns the day of the week for a given date string in "YYYY-MM-DD" format.
-const char *dayOfWeek(char *date);
+// Returns the day of the week for a given year, month, day integers.
+// (Returned from parse_date function)
+const char *dayOfWeek(int y, int m, int d);
 
 // Returns the month name for a given date string in "YYYY-MM-DD" format.
 const char *monthName(const char *date);
