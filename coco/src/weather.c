@@ -203,7 +203,7 @@ void disp_forecast(FORECAST *fc, char p)
 		put_icon((i*10 +4) * 4, 26, icon_code(fc->day[i+start_idx].icon));
 
 		//   weekday
-		puts(((i * 10) +5) * 4, 80, WHITE, dayOfWeek(fc->day[i + start_idx].date), false);
+		puts(((i * 10) +5) * 4, 80, WHITE, dayOfWeek(y, m, d), false);
 
 		// max temp
 		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_max, temp_unit[unit_opt]);

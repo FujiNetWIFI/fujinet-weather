@@ -18,14 +18,15 @@ char om_head[] = "N:https://api.open-meteo.com/v1/forecast?latitude=";
 char om_lon[] = "&longitude=";
 
 char om_tail_weather1[] = "&timezone=auto&current=relative_humidity_2m,weather_code,cloud_cover,surface_pressure";
-char om_tail_weather2[] = "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m;&forecast_hours=1";
+char om_tail_weather2[] = "&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m";
 char om_tail_weather3[] = "&hourly=dew_point_2m,visibility&forecast_hours=1";
 
-char om_forecast_days_hours_daily[] = "&forecast_days=8&forecast_hours=1&daily=";
-
-char om_tail_forecast1[] = "weather_code,temperature_2m_max,temperature_2m_min";
-char om_tail_forecast2[] = "sunrise,sunset,wind_speed_10m_max,wind_direction_10m_dominant";
+char om_forecast_days_hours_daily[] = "&timezone=auto&forecast_days=8&forecast_hours=1&daily=";
+                                                                                // 253
+char om_tail_forecast1[] = "temperature_2m_max,temperature_2m_min";
+char om_tail_forecast2[] = "wind_speed_10m_max,wind_direction_10m_dominant";
 char om_tail_forecast3[] = "precipitation_sum,uv_index_max";
+char om_tail_forecast4[] = "weather_code,sunrise,sunset";
 
 /* unit option string */
 char *unit_str[] = {"&wind_speed_unit=ms", "&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch"};
@@ -222,10 +223,6 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 
 	set_forecast(fc, 2);
 
-	//  copy today's sunrise/sunset from forecast data to weather data
-	strcpy(wi->sunrise, fc->day[0].sunrise);
-	strcpy(wi->sunset, fc->day[0].sunset);
-
 	network_close(omurl); // of forecast part 2
 
 	//  part 3
@@ -244,10 +241,32 @@ void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
 	set_forecast(fc, 3);
 
 	network_close(omurl); // of forecast part 3
+
+	//  part 4
+	setup_omurl(loc, om_tail_forecast4, true);
+
+	progress_dots(increment_dot());
+
+	err = network_open(omurl, OPEN_MODE_READ, OPEN_TRANS_NONE);
+	handle_err("forecast 4 open");
+
+	err = network_json_parse(omurl);
+	handle_err("forecast 4 parse");
+
+	progress_dots(increment_dot());
+
+	set_forecast(fc, 4);
+
+	network_close(omurl); // of forecast part 4
+
+	//  Copy today's sunrise/sunset from forecast data to weather data
+	//  We don't have both until the second part of the forecast is retrieved
+	strcpy(wi->sunrise, fc->day[0].sunrise);
+	strcpy(wi->sunset, fc->day[0].sunset);
 }
 
 //
-// set forecast data part1
+// set forecast data
 //
 void set_forecast(FORECAST *fc, int segment)
 {
@@ -269,18 +288,10 @@ void set_forecast(FORECAST *fc, int segment)
 				// temp max
 				sprintf(querybuf, "/daily/temperature_2m_max/%d", i);
 				network_json_query(omurl, querybuf, fc->day[i].temp_max);
-				// icon
-				sprintf(querybuf, "/daily/weather_code/%d", i);
-				network_json_query(omurl, querybuf, prbuf);
-				fc->day[i].icon = (char)atoi(prbuf);
 				break;
 			case 2:
-				// sunrise
-				sprintf(querybuf, "/daily/sunrise/%d", i);
-				network_json_query(omurl, querybuf, fc->day[i].sunrise);
-				// sunset
-				sprintf(querybuf, "/daily/sunset/%d", i);
-				network_json_query(omurl, querybuf, fc->day[i].sunset);
+
+
 				// wind  speed
 				sprintf(querybuf, "/daily/wind_speed_10m_max/%d", i);
 				network_json_query(omurl, querybuf, fc->day[i].wind_speed);
@@ -295,6 +306,18 @@ void set_forecast(FORECAST *fc, int segment)
 				// uv index  max
 				sprintf(querybuf, "/daily/uv_index_max/%d", i);
 				network_json_query(omurl, querybuf, fc->day[i].uv_index_max);
+				break;
+			case 4:
+				// icon
+				sprintf(querybuf, "/daily/weather_code/%d", i);
+				network_json_query(omurl, querybuf, prbuf);
+				fc->day[i].icon = (char)atoi(prbuf);
+				// sunrise
+				sprintf(querybuf, "/daily/sunrise/%d", i);
+				network_json_query(omurl, querybuf, fc->day[i].sunrise);
+				// sunset
+				sprintf(querybuf, "/daily/sunset/%d", i);
+				network_json_query(omurl, querybuf, fc->day[i].sunset);
 				break;
 		}
 		progress_dots(increment_dot());

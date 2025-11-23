@@ -47,17 +47,13 @@ int parse_date(const char *date, int *year, int *month, int *day)
     return 0; // Success
 }
 
-const char *dayOfWeek(char *date)
+const char *dayOfWeek(int y, int m, int d)
 {
     static const char *days[] = {
         "Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"
     };
+    
     static char result[4];
-
-    int y, m, d;
-
-    // Parse "YYYY-MM-DD"
-    parse_date(date, &y, &m, &d);
 
     // Adjust for Zeller’s congruence (months Jan/Feb are counted as 13/14 of previous year)
     if (m < 3) {
