@@ -5,7 +5,7 @@ BUILD_DIR ?= ./build
 SRC_DIRS ?= ./src
 # Set this to the version of FN-LIB you wish to use in this project:
 export CURRENT_TARGET := coco
-export FUJINET_LIB_VERSION := 4.8.2
+export FUJINET_LIB_VERSION := 4.8.3
 
 FLAGS=
 LDFLAGS=-o $(TARGET_EXEC)
