@@ -20,7 +20,7 @@ READY     := $C474
         .import         zerobss, copydata
         .import         __STACKSIZE__                   ; Linker generated
         .import         __RAM_START__, __RAM_SIZE__     ; Linker generated
-        .importzp       ST
+ST := $90
 
         .include        "zeropage.inc"
 
@@ -60,9 +60,9 @@ reset:
 ; Set up the stack.
 
         lda     #<(__RAM_START__ + __RAM_SIZE__)
-        sta     sp
+        sta     c_sp
         lda     #>(__RAM_START__ + __RAM_SIZE__)
-        sta     sp+1            ; Set argument stack ptr
+        sta     c_sp+1          ; Set argument stack ptr
 
 ; Call the module constructors.
 

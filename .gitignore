@@ -67,6 +67,8 @@ apple-tools/*.dsk
 build/
 dist/
 obj/
+__pycache__/
+.claude/
 
 # emulator configs
 altirra-debug.ini
