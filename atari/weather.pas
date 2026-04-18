@@ -16,12 +16,12 @@ const
     APPKEY_CONFIG_KEY = $c0;
     APPKEY_LOCATION_KEY = $10;
 
-var IP_api: string[15] = 'api.ipstack.com';
+var IP_api: string[15] = 'ip-api.com';
     OW_api: string[22] = 'api.openweathermap.org';
     OC_api: string[20] = 'api.opencagedata.com';
     
     getLine: string;    
-    responseBuffer: array [0..4095] of byte absolute JSON_BUFFER;
+    responseBuffer: array [0..4431] of byte absolute JSON_BUFFER;
     
     imperialCCodes: array [0..7] of string[2] = ('US', 'GB', 'IN', 'IE', 'CA', 'AU', 'HK', 'NZ');
     windDir: array [0..7] of string[2] = ('N ', 'NE', 'E ', 'SE', 'S ', 'SW', 'W ', 'NW');
@@ -33,7 +33,8 @@ var IP_api: string[15] = 'api.ipstack.com';
     country_code: string[3];
     region_code: string[3];
     longitude, latitude: string[20];
-    defaultApiKey: string[32] = '2e8616654c548c26bc1c86b1615ef7f1';
+    // Created 2026-04-16 by Rich Stephens (richswww@gmail.com)
+    defaultApiKey: string[32] = '4e1696050d5292d8402c377d645a0a8c';
     
     descDir, descOffset, descScroll, descHSC: byte;
 
@@ -202,28 +203,44 @@ end;
 
 procedure GetTimezone;
 begin
-    GetJsonKeyValue('timezone_offset', tmp);
+    GetJsonKeyValue('timezone_offset', tmp, 40);
     timezone := StrToInt(tmp);    
 end;
 
 procedure ParseLocation;
 begin
-    GetJsonKeyValue('ip', tmp);
-    GetJsonKeyValue('city', city);
+    GetJsonKeyValue('query', tmp, 40);
+    GetJsonKeyValue('city', city, 40);
     utfNormalize(city);
-    GetJsonKeyValue('country_code', country_code);
-    GetJsonKeyValue('region_code', region_code);
-    GetJsonKeyValue('latitude', latitude);
-    GetJsonKeyValue('longitude', longitude);
+    GetJsonKeyValue('countryCode', country_code, 3);
+    GetJsonKeyValue('region', region_code, 3);
+    GetJsonKeyValue('lat', latitude, 20);
+    GetJsonKeyValue('lon', longitude, 20);
 end;
 
 procedure ParseWeather;
+var savedStart: word;
 begin
+    savedStart := jsonStart;
+    jsonStart := jsonRoot;
     GetTimezone;
-    GetJsonKeyValue('dt', tmp);
+    GetJsonKeyValue('dt', tmp, 40);
     unixTime := StrToInt(tmp) + timezone;
     UnixToDate(unixtime, curDate);
     clockCount := CurDate.second * fps;
+    jsonStart := savedStart;
+end;
+
+procedure ParseForecastDay;
+var savedStart: word;
+begin
+    savedStart := jsonStart;
+    GetTimezone;
+    GetJsonKeyValue('dt', tmp, 40);
+    unixTime := StrToInt(tmp) + timezone;
+    UnixToDate(unixtime, curDate);
+    clockCount := CurDate.second * fps;
+    jsonStart := savedStart;
 end;
 
 procedure ParseForecast;
@@ -248,7 +265,7 @@ end;
 function LoadLocation: byte;
 begin
     InitCookie(APPKEY_CREATOR_ID, APPKEY_APP_ID, APPKEY_LOCATION_KEY);
-    result := GetCookie(location);
+    result := GetCookie(@location);
 end;
 
 procedure StrCpyMax(var s1,s2:string; len:byte);
@@ -270,7 +287,7 @@ begin
 
     InitCookie(APPKEY_CREATOR_ID, APPKEY_APP_ID, APPKEY_LOCATION_KEY);
     result := $ff;
-    if savingEnabled then result := SetCookie(location, SizeOf(TLocation));
+    if savingEnabled then result := SetCookie(@location, SizeOf(TLocation));
     if result <> 1 then savingEnabled := false;
 end;
 
@@ -278,7 +295,7 @@ end;
 function LoadOptions: byte;
 begin
     InitCookie(APPKEY_CREATOR_ID, APPKEY_APP_ID, APPKEY_CONFIG_KEY);
-    result := GetCookie(options);
+    result := GetCookie(@options);
 end;
 
 function SaveOptions: byte;
@@ -286,7 +303,7 @@ begin
     InitCookie(APPKEY_CREATOR_ID, APPKEY_APP_ID, APPKEY_CONFIG_KEY);
     result := $ff;
     if not IsKeyCustom then options.refreshInterval := DEFAULT_REFRESH;
-    if savingEnabled then result := SetCookie(options, SizeOf(TOptions));
+    if savingEnabled then result := SetCookie(@options, SizeOf(TOptions));
     if result <> 1 then savingEnabled := false;
     UpdateRefreshFrames;
 end;
@@ -338,6 +355,10 @@ begin
         TCP_GetStatus;
         if TCP_bytesWaiting > 0 then begin
             blockLen := TCP_bytesWaiting;
+            if jsonEnd + blockLen > 4431 then begin
+                blockLen := 4431 - jsonEnd;
+                if blockLen = 0 then break;
+            end;
             FN_ReadBuffer(@responseBuffer[jsonEnd], blockLen);
             jsonEnd := jsonEnd + blockLen;
         end;
@@ -382,7 +403,7 @@ begin
        
     end;
     if (askFor = CALL_WEATHER) or (askFor = CALL_FORECAST) then begin
-        s:='/data/2.5/onecall?lat=';
+        s:='/data/3.0/onecall?lat=';
         MergeStr(s,latitude);
         MergeStr(s,'&lon=');
         MergeStr(s,longitude);
@@ -397,7 +418,7 @@ begin
         else MergeStr(s, defaultApiKey);
     end;
     if askFor = CALL_CHECKKEY then begin
-        s:='/data/2.5/onecall?lat=50&lon=20&exclude=daily,minutely,hourly,alerts&appid=';
+        s:='/data/3.0/onecall?lat=50&lon=20&exclude=daily,minutely,hourly,alerts&appid=';
         MergeStr(s,tmp);
     end;
 end;
@@ -449,14 +470,14 @@ begin
     tmp[0] := #0;
     Writeln;
     if findKeyPos('total_results') <> 0 then begin
-        GetJsonKeyValue('total_results', tmp);
+        GetJsonKeyValue('total_results', tmp, 40);
         if tmp[1] = '1' then begin
-            GetJsonKeyValue('formatted', city);
-            //if Length(city) = 0 then GetJsonKeyValue('town', city);
+            GetJsonKeyValue('formatted', city, 40);
+            //if Length(city) = 0 then GetJsonKeyValue('town', city, 40);
             TrimAtChar(city,',');
             UtfNormalize(city);
-            GetJsonKeyValue('ISO_3166-1_alpha-2', country_code);
-            GetJsonKeyValue('state_code', region_code);
+            GetJsonKeyValue('ISO_3166-1_alpha-2', country_code, 3);
+            GetJsonKeyValue('state_code', region_code, 3);
         end;
         if Length(city) = 0 then begin
             tmp := '404';
@@ -465,8 +486,8 @@ begin
         end;
         jsonStart := jsonRoot;
         FollowKey('geometry');
-        GetJsonKeyValue('lat', latitude);
-        GetJsonKeyValue('lng', longitude);
+        GetJsonKeyValue('lat', latitude, 20);
+        GetJsonKeyValue('lng', longitude, 20);
     end else begin
         tmp := '400';
         getLine := 'Communication error';
@@ -477,7 +498,7 @@ end;
 
 procedure GetIPLocation;
 begin
-    getLine:='/check?access_key=9ba846d99b9d24288378762533e00318&fields=ip,region_code,country_code,city,latitude,longitude';
+    getLine:='/json/';
     HTTPGet(IP_api, getLine);
     ParseLocation;
     if options.units = unknown then begin
@@ -728,7 +749,7 @@ procedure ShowDescription;
 begin
     InitScroll;
     scrWidth := 80;
-    GetJsonKeyValue('description', getLine);
+    GetJsonKeyValue('description', getLine, 255);
     PutCString(getLine, VRAM + 43 * 40 + 2,1,20);
     PutCString(getLine, VRAM + 41 * 40 + 2,3,20); 
     weatherDescLen := Length(getLine);
@@ -755,7 +776,7 @@ begin
     SDLSTL := DLIST;
     if page = PAGE_WEATHER then SetDliJMP(0) else SetDliJMP(1);
     SetIntVec(iDLI, @dli);
-    nmien := $c0; 
+    nmien := $c0;
     chbas := Hi(FONT);
     ClearGfx;
 
@@ -773,8 +794,6 @@ begin
     color4 := colors[C_SKY_NIGHT];
     color0 := colors[C_HEAD_NIGHT];
     cityColor := colors[C_HEAD_NIGHT];
-
-
     textColor := 15;
     menuColor := 0;
 end;
@@ -789,7 +808,7 @@ begin
     ScreenOff;
     InitGfx;
     // set backgrond color based on icon type
-    GetJsonKeyValue('icon', tmp);
+    GetJsonKeyValue('icon', tmp, 40);
     if tmp[3] = 'd' then begin
         color4 := colors[C_SKY_DAY];
         color0 := colors[C_HEAD_DAY];
@@ -810,7 +829,7 @@ begin
     // temperature
     decp := 0;
     aftercoma := false;
-    GetJsonKeyValue('temp', getLine);
+    GetJsonKeyValue('temp', getLine, 255);
     for i:=1 to Length(getLine) do begin
         if aftercoma then inc(decp);
         if getLine[i] = '.' then aftercoma:=true;
@@ -830,7 +849,7 @@ begin
     PrintTemperature(getLine, VRAM + 17 * 40 + 12);
     
     // pressure
-    GetJsonKeyValue('pressure', tmp);
+    GetJsonKeyValue('pressure', tmp, 40);
     getLine := 'hPa';
     if options.units = imperial then begin
         getLine := '"Hg';
@@ -852,41 +871,41 @@ begin
     Writeln(getLine);
 
     // wind
-    GetJsonKeyValue('wind_speed', tmp);
+    GetJsonKeyValue('wind_speed', tmp, 40);
     Gotoxy(2,3);
     Write('Wind: ',tmp,' ');
     WriteSpeedUnit;
     Write(' ');
-    GetJsonKeyValue('wind_deg', tmp);
+    GetJsonKeyValue('wind_deg', tmp, 40);
     Write(windDir[GetDirIndex(StrToInt(tmp))]);
 
-    GetJsonKeyValue('humidity', tmp);
+    GetJsonKeyValue('humidity', tmp, 40);
     Gotoxy(24,6);
     Write('Humidity: ', tmp, '%');
-    GetJsonKeyValue('clouds', tmp);
+    GetJsonKeyValue('clouds', tmp, 40);
     Gotoxy(24,7);
     Write('Clouds:   ', tmp, '%');
 
-    GetJsonKeyValue('sunrise', tmp);        
+    GetJsonKeyValue('sunrise', tmp, 40);        
     unixTime := StrToInt(tmp) + timezone;
     UnixToDate(unixtime, sunriseDate);
     Gotoxy(24,3);
     Write('Sunrise: ');
     WriteTime(sunriseDate);
     
-    GetJsonKeyValue('sunset', tmp);
+    GetJsonKeyValue('sunset', tmp, 40);
     unixTime := StrToInt(tmp) + timezone;
     UnixToDate(unixtime, sunsetDate);
     Gotoxy(24,4);
     Write('Sunset:  ');
     WriteTime(sunsetDate);
 
-    GetJsonKeyValue('dew_point', tmp);
+    GetJsonKeyValue('dew_point', tmp, 40);
     Gotoxy(2,6);
     Write('Dew point:  ',tmp);
     Write(grade);
     
-    GetJsonKeyValue('visibility', tmp);
+    GetJsonKeyValue('visibility', tmp, 40);
     Gotoxy(2,7);
     unixtime := StrToInt(tmp);
     Write('Visibility: ');
@@ -895,11 +914,11 @@ begin
         write(unixtime, 'km')
     end else Write(unixtime, 'm');
 
-    GetJsonKeyValue('feels_like', tmp);
+    GetJsonKeyValue('feels_like', tmp, 40);
     Gotoxy(2,4);
     Write('Feels like: ', tmp);
     Write(grade);
-    
+
     ShowMenu;
     ScreenOn;
 end;
@@ -921,7 +940,7 @@ begin
     PutString(getLine, VRAM + 8 * 40 + x, 1);
 
     // icon
-    GetJsonKeyValue('icon', tmp);
+    GetJsonKeyValue('icon', tmp, 40);
     DrawIcon(GetIconPtr(tmp), VRAM + 17 * 40 + x);
     
     scrWidth := 80;
@@ -934,19 +953,19 @@ begin
 
     o := 2; // left margin
 
-    GetJsonKeyValue('night', getLine);
+    GetJsonKeyValue('night', getLine, 255);
     if Length(getLine)>5 then setLength(getLine, 5); 
     MergeStr(getLine, grade);
     Gotoxy(x + o,1);
     Write(getLine);
 
-    GetJsonKeyValue('day', getLine);
+    GetJsonKeyValue('day', getLine, 255);
     if Length(getLine)>5 then setLength(getLine, 5); 
     MergeStr(getLine, grade);
     Gotoxy(x + o,2);
     Write(getLine);
 
-    GetJsonKeyValue('pressure', getLine);
+    GetJsonKeyValue('pressure', getLine, 255);
     tmp := 'hPa';
     if options.units = imperial then begin
         tmp := '"Hg';
@@ -955,21 +974,21 @@ begin
     Gotoxy(x + o,4);
     Write(getLine, tmp);
     
-    GetJsonKeyValue('wind_deg', getLine);
+    GetJsonKeyValue('wind_deg', getLine, 255);
     Gotoxy(x + o,5);
     Write('Wind: ');
     Write(char(GetDirIndex(StrToInt(getLine))));
     
-    GetJsonKeyValue('wind_speed', getLine);
+    GetJsonKeyValue('wind_speed', getLine, 255);
     Gotoxy(x + o,6);
     Write(getLine);
     WriteSpeedUnit;
     
-    GetJsonKeyValue('pop', tmp);
+    GetJsonKeyValue('pop', tmp, 40);
     prob := Trunc(StrToFloat(tmp) * 100);
     
-    GetJsonKeyValue('snow', tmp);
-    GetJsonKeyValue('rain', getLine);
+    GetJsonKeyValue('snow', tmp, 40);
+    GetJsonKeyValue('rain', getLine, 255);
     Gotoxy(x + o,7);
     if prob > 0 then begin
         if Length(tmp) > 0 then begin // snow
@@ -1004,7 +1023,7 @@ begin
     repeat 
         if forecastPtrs[day]<>0 then begin
             jsonStart := forecastPtrs[day];
-            ParseWeather;
+            ParseForecastDay;
             ShowDayofForecast(column);
         end;
         inc(day);
@@ -1148,7 +1167,7 @@ begin
 end;
 
 procedure ReloadWeather;
-begin 
+begin
     GetWeather;
     ShowWeather;
 end;
