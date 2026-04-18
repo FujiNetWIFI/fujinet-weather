@@ -18,6 +18,9 @@
 extern UNITOPT unit_opt;
 extern int	err;
 
+void set_forecast1(FORECAST *fc);
+void set_forecast2(FORECAST *fc);
+
 
 char omurl[256];
 char om_head[] = "N:https://api.open-meteo.com/v1/forecast?latitude=";
