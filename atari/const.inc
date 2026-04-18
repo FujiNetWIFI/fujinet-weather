@@ -13,11 +13,10 @@ VRAMTXT = VRAM + $400;
 VRAM_SIZE = (41 * 40) + (9 * 80) + (9 * 40); // $AA0 b
 
 GFX = $A000;    //  3840  $f00
-DLIST = $AF00;  //  1 page both
+DLIST = $8C00;
 DLIST2 = DLIST + $80;
 
-
-JSON_BUFFER = $B000;  // 4Kb
+JSON_BUFFER = $AEB0;  // ~4.4Kb, starts after GFX icon + digit data
 
 DEFAULT_REFRESH = 120;
 

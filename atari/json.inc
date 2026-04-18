@@ -233,7 +233,7 @@ begin
     if found then result := jptr;
 end;
 
-procedure GetJsonKeyValue(skey:KeyString;var v:string);
+procedure GetJsonKeyValue(skey:KeyString;var v:string;maxSize:byte);
 var c: char;
     copychar, inQuotes: boolean;
     jptr: word;
@@ -241,7 +241,6 @@ begin
     v[0] := #0;
     inQuotes := false;
     jptr := FindKeyPos(skey);
-    //writeln('key at: ', jsonPtr);
     if jptr <> 0 then begin
         repeat
             c := char(responseBuffer[jptr]);
@@ -265,16 +264,15 @@ begin
                     end;
             end;
             if copychar then begin
-                Inc(v[0]);
-                v[Length(v)] := c;
-                if Length(v) = 40 then exit;
+                if Length(v) < maxSize then begin
+                    Inc(v[0]);
+                    v[Length(v)] := c;
+                end else exit;
             end;
             
             inc(jptr);
         until (jptr >= jsonEnd);
     end;
-    //Writeln('Key not found: ', skey);
-    v[0] := #0;
 end;
 
 function FollowKey(s:KeyString):word;
