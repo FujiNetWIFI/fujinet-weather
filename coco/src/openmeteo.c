@@ -188,7 +188,8 @@ void set_weather(WEATHER *wi, int segment)
 		case 1:
 			//  date & time
 			network_json_query(omurl, "/current/time", wi->datetime);
-			// timezone abbreviation
+			//  timezone abbreviation (e.g. "EDT" or "GMT-4" depending
+			//  on what open-meteo decides to return)
 			network_json_query(omurl, "/timezone_abbreviation", wi->timezone);
 			//  pressure
 			network_json_query(omurl, "/current/surface_pressure", wi->pressure);

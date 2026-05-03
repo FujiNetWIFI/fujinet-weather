@@ -42,6 +42,136 @@ char *precip_unit[] = {" mm", " in"};
 
 char *wind_deg[] = {" N", " NE", " E", " SE", " S", " SW", " W", " NW"};
 
+#ifdef COCO3
+/* Toggle the foreground slot of text_palette so subsequent text renders
+ * in either label-white or data-yellow.  The 2bpp source font only ever
+ * uses 0 (off) and 3 (on), so we just swap text_palette[3]. */
+#define TEXT_LABEL  3   /* white */
+#define TEXT_DATA   5   /* light blue */
+static void use_color(unsigned char c) { text_palette[3] = c; }
+
+/* CoCo 3: 40x25 char grid layout mirroring the MSDOS port. */
+void disp_weather(WEATHER *wi)
+{
+	char prbuf[LINE_LEN];
+	char date_buf[DATE_LEN];
+	char time_buf[TIME_LEN];
+	unsigned char tx, len;
+	int wind_idx;
+	long visi;
+
+	if (current_screen == SCREEN_WEATHER) return;
+	current_screen = SCREEN_WEATHER;
+	current_forecast_page = 0;
+
+	gfx_cls(BGCOLOR);
+	draw_border();
+
+	/* Date/time, centered on row 1 -- data. */
+	strncpy(date_buf, wi->datetime, DATE_LEN-1);
+	date_buf[DATE_LEN-1] = 0;
+	strncpy(time_buf, wi->datetime + 11, TIME_LEN-1);
+	time_buf[TIME_LEN-1] = 0;
+	sprintf(prbuf, "%s %s %s", date_buf, time_buf, wi->timezone);
+	len = (unsigned char)strlen(prbuf);
+	tx = len < 38 ? 1 + (38 - len) / 2 : 1;
+	use_color(TEXT_DATA);
+	drawText(tx, 1, prbuf);
+
+	use_color(TEXT_LABEL);
+	draw_hdiv(2);
+
+	/* Icon centered in the cols 1-7 area (matches MSDOS 7-cell icon slot). */
+	put_icon(3, 3, icon_code(wi->icon));
+
+	/* Temp double-height at (9, 3) -- data. */
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
+	drawTextDouble(9, 3, prbuf);
+	tx = 9 + (unsigned char)strlen(prbuf) + 1;
+	use_color(TEXT_LABEL);
+	drawText(tx, 3, "Feels");
+	drawText(tx, 4, "Like:");
+	tx += 6;
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%s%s", wi->feels_like, temp_unit[unit_opt]);
+	drawTextDouble(tx, 3, prbuf);
+
+	sprintf(prbuf, "%s hPa", wi->pressure);
+	drawTextDouble(9, 5, prbuf);
+
+	/* Description and location: keep white (not values per se). */
+	use_color(TEXT_LABEL);
+	decode_description(wi->icon, prbuf);
+	drawText(1, 8, prbuf);
+
+	if (strlen(wi->state) > 0)
+		sprintf(prbuf, "%s, %s, %s", wi->name, wi->state, wi->country);
+	else
+		sprintf(prbuf, "%s, %s", wi->name, wi->country);
+	drawText(1, 9, prbuf);
+
+	draw_hdiv(10);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 11, "Humidity:");
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%s %%", wi->humidity);
+	drawText(12, 11, prbuf);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 12, "Dew Point:");
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%s %s", wi->dew_point, temp_unit[unit_opt]);
+	drawText(13, 12, prbuf);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 13, "Clouds:");
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%s %%", wi->clouds);
+	drawText(10, 13, prbuf);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 14, "Visibility:");
+	visi = atol(wi->visibility);
+	if (unit_opt == METRIC)
+		visi = (visi + 500) / 1000;
+	else
+		visi = (visi + 2640) / 5280;
+	use_color(TEXT_DATA);
+	sprintf(prbuf, "%ld%s", visi, vis_unit[unit_opt]);
+	drawText(14, 14, prbuf);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 15, "Wind:");
+	wind_idx = (atoi(wi->wind_deg) % 360) / 45;
+	sprintf(prbuf, "%s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
+	use_color(TEXT_DATA);
+	drawText(8, 15, prbuf);
+
+	use_color(TEXT_LABEL);
+	draw_hdiv(17);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 18, "Sunrise:");
+	use_color(TEXT_DATA);
+	memset(time_buf, 0, TIME_LEN);
+	strncpy(time_buf, wi->sunrise + 11, 5);
+	sprintf(prbuf, "%s %s", time_buf, wi->timezone);
+	drawText(11, 18, prbuf);
+
+	use_color(TEXT_LABEL);
+	drawText(2, 19, "Sunset:");
+	use_color(TEXT_DATA);
+	memset(time_buf, 0, TIME_LEN);
+	strncpy(time_buf, wi->sunset + 11, 5);
+	sprintf(prbuf, "%s %s", time_buf, wi->timezone);
+	drawText(11, 19, prbuf);
+
+	use_color(TEXT_LABEL);
+	draw_hdiv(22);
+}
+#else
 void disp_weather(WEATHER *wi)
 {
 	char prbuf[LINE_LEN];
@@ -58,7 +188,7 @@ void disp_weather(WEATHER *wi)
 	current_screen = SCREEN_WEATHER;
 	current_forecast_page = 0;
 
-	gfx_cls(CYAN);
+	gfx_cls(BGCOLOR);
 
 	//"2025-10-13T21:15" is the source string.
 	strncpy(date_buf, wi->datetime, DATE_LEN-1);
@@ -69,10 +199,10 @@ void disp_weather(WEATHER *wi)
 	// 2023-12-31 18:25 is what we display.
 	sprintf(prbuf, "%s %s %s", date_buf, time_buf, wi->timezone);
 	puts(0, 4, PURPLE, prbuf, false);
-	
+
 	// weather conditions icon
 	put_icon(8, 16, icon_code(wi->icon));
-	
+
 	// Temperature
 	sprintf(prbuf, "%s%s", wi->temp, temp_unit[unit_opt]);
 	puts(40, 16, WHITE, prbuf, true);
@@ -83,15 +213,15 @@ void disp_weather(WEATHER *wi)
 	puts(72, 24, WHITE, "Like:", false);
 	sprintf(prbuf, "%s%s", wi->feels_like, temp_unit[unit_opt]);
 	puts(96, 16, WHITE, prbuf, true);
-	
+
 	// Pressure
 	sprintf(prbuf, "%s%s", wi->pressure, " hPa");
 	puts(40, 40, WHITE, prbuf, true);
-	
+
 	// Condition
 	decode_description(wi->icon, prbuf);
 	puts(0, 72, WHITE, prbuf, false);
-	
+
 	// Region
 	if( strlen(wi->state) > 0 )
 	{
@@ -102,22 +232,22 @@ void disp_weather(WEATHER *wi)
 		sprintf(prbuf, "%s, %s", wi->name, wi->country);
 	}
 	puts(0, 84, WHITE, prbuf, false);
-	
+
 	// Humidity
 	puts(0 + 4, 100, WHITE, "Humidity:", false);
 	sprintf(prbuf, "%s %%", wi->humidity);
 	puts(40 + 4, 100, PURPLE, prbuf, false);
-	
+
 	// Dew Point
 	sprintf(prbuf, "%s%s", wi->dew_point, temp_unit[unit_opt]);
 	puts(0 + 4, 112, WHITE, "Dew Point:", false);
 	puts(44 + 4, 112, PURPLE, prbuf, false);
-	
+
 	// Clouds
 	puts(0 + 4, 124, WHITE, "Clouds:", false);
 	sprintf(prbuf, "%s %%", wi->clouds);
 	puts(32 + 4, 124, PURPLE, prbuf, false);
-	
+
 	// Visibility
 	puts(0 + 4, 136, WHITE, "Visibility:", false);
 	visi = (atol(wi->visibility));
@@ -133,26 +263,151 @@ void disp_weather(WEATHER *wi)
 	}
 	sprintf(prbuf, "%ld%s", visi, vis_unit[unit_opt]);
 	puts(48 + 4, 136, PURPLE, prbuf, false);
-	
+
 	// Wind
 	wind_idx = (atoi(wi->wind_deg) % 360) / 45;
 	puts(0 + 4, 148, WHITE, "Wind:", false);
 	sprintf(prbuf, "%s%s%s", wi->wind_speed, speed_unit[unit_opt], wind_deg[wind_idx]);
 	puts(24 + 4, 148, PURPLE, prbuf, false);
-	
+
 	// Sunrise
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunrise + 11, 5);
 	puts(0 + 4, 160, WHITE, "Sunrise:", false);
-	puts(36 + 4, 160, PURPLE, time_buf, false);
-	
+	sprintf(prbuf, "%s %s", time_buf, wi->timezone);
+	puts(36 + 4, 160, PURPLE, prbuf, false);
+
 	// Sunset
 	memset(time_buf, 0, TIME_LEN);
 	strncpy(time_buf, wi->sunset + 11, 5);
 	puts(0 + 4 , 172, WHITE, "Sunset:", false);
-	puts(32 + 4, 172, PURPLE, time_buf, false);
+	sprintf(prbuf, "%s %s", time_buf, wi->timezone);
+	puts(32 + 4, 172, PURPLE, prbuf, false);
+}
+#endif
+
+#ifdef COCO3
+/* Wrap a weather description into up to 3 lines of width maxw, drawing each
+ * line at (x, y+row).  Mirrors the MSDOS port. */
+static void draw_desc_wrapped(unsigned char x, unsigned char y, char code,
+                              unsigned char maxw)
+{
+	char desc[LINE_LEN];
+	char line[14];
+	char *p, *wstart, *lp;
+	unsigned char llen, wlen, row;
+
+	decode_description(code, desc);
+	if (strncmp(desc, "Thunderstorm", 12) == 0)
+	{
+		memcpy(desc, "T-Storm", 7);
+		strcpy(desc + 7, "");
+	}
+
+	p = desc;
+	row = 0;
+
+	while (*p && row < 3)
+	{
+		lp = line;
+		llen = 0;
+
+		while (*p)
+		{
+			wstart = p;
+			wlen = 0;
+			while (*p && *p != ' ')
+			{
+				p++;
+				wlen++;
+			}
+
+			if (llen == 0)
+			{
+				memcpy(lp, wstart, wlen);
+				lp += wlen;
+				llen = wlen;
+			}
+			else if (llen + 1 + wlen <= maxw)
+			{
+				*lp++ = ' ';
+				memcpy(lp, wstart, wlen);
+				lp += wlen;
+				llen += 1 + wlen;
+			}
+			else
+			{
+				p = wstart;
+				break;
+			}
+
+			if (*p == ' ')
+				p++;
+		}
+
+		*lp = '\0';
+		drawText(x, y + row, line);
+		row++;
+	}
 }
 
+/* CoCo 3: 4 days/page in 4 columns of 10 cells, mirroring the MSDOS layout. */
+void disp_forecast(FORECAST *fc, char p)
+{
+	char i;
+	char start_idx;
+	char prbuf[QUARTER_LEN];
+	unsigned char cx;
+	int wind_idx;
+	int y, m, d;
+
+	if (p == current_forecast_page) return;
+	current_screen = SCREEN_FORECAST;
+	current_forecast_page = p;
+
+	start_idx = (p - 1) * 4;
+	gfx_cls(BGCOLOR);
+	draw_forecast_border();
+
+	for (i = 0; i <= 3; i++)
+	{
+		if ((start_idx + i) > 7) break;
+
+		cx = (unsigned char)(1 + i * 10 + 1);
+
+		parse_date(fc->day[i + start_idx].date, &y, &m, &d);
+
+		/* Center each piece on column-center cx+3.  Day uses %d (no
+		 * leading-space padding) so 1-digit days center cleanly. */
+		sprintf(prbuf, "%d", d);
+		drawText(cx + 3 - (unsigned char)strlen(prbuf) / 2, 1, prbuf);
+		drawText(cx + 2, 2, monthName(fc->day[i + start_idx].date));
+		put_icon(cx + 1, 3, icon_code(fc->day[i + start_idx].icon));
+		drawText(cx + 2, 7, dayOfWeek(y, m, d));
+
+		draw_desc_wrapped(cx, 9, fc->day[i + start_idx].icon, 8);
+
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_max, temp_unit[unit_opt]);
+		drawText(cx, 13, prbuf);
+
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].temp_min, temp_unit[unit_opt]);
+		drawText(cx, 14, prbuf);
+
+		sprintf(prbuf, "UV %s", fc->day[i+start_idx].uv_index_max);
+		drawText(cx, 15, prbuf);
+
+		wind_idx = (atoi(fc->day[i+start_idx].wind_deg) % 360) / 45;
+		sprintf(prbuf, "W:%s", wind_deg[wind_idx]);
+		drawText(cx, 17, prbuf);
+
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].wind_speed, speed_unit[unit_opt]);
+		drawText(cx, 18, prbuf);
+
+		sprintf(prbuf, "%s%s", fc->day[i+start_idx].precipitation_sum, precip_unit[unit_opt]);
+		drawText(cx, 20, prbuf);
+	}
+}
+#else
 void disp_forecast(FORECAST *fc, char p)
 {
 	char i;
@@ -172,7 +427,7 @@ void disp_forecast(FORECAST *fc, char p)
 	current_forecast_page = p;
 
 	start_idx = (p - 1) * 3;
-	gfx_cls(CYAN);
+	gfx_cls(BGCOLOR);
 
 	//	draw header
 	puts(0, 92, WHITE, max_str, false);
@@ -231,6 +486,7 @@ void disp_forecast(FORECAST *fc, char p)
 		puts(((i*10)+3) * 4, 144, WHITE, prbuf, false);
 	}
 }
+#endif
 
 //
 // decode description string from weather code
@@ -327,12 +583,40 @@ void decode_description(char code, char *buf)
 //
 // decode icon from weather code
 //
-byte * icon_code(char code) 
+#ifdef COCO3
+/* CoCo 3: returns an index 0..8 into charset_coco3_icons.
+ * Order: 0 clear, 1 few_clouds, 2 scattered, 3 broken, 4 shower_rain,
+ *        5 rain, 6 thunderstorm, 7 snow, 8 fog. */
+unsigned char icon_code(char code)
+{
+	switch (code)
+	{
+		case 0:  return 0;
+		case 1:  return 1;
+		case 2:  return 2;
+		case 3:  return 3;
+		case 56: case 57: case 80: case 81: case 82:
+			return 4;
+		case 51: case 53: case 55: case 61: case 63:
+		case 65: case 66: case 67:
+			return 5;
+		case 95: case 96: case 99:
+			return 6;
+		case 71: case 73: case 75: case 77: case 85: case 86:
+			return 7;
+		case 45: case 48:
+			return 8;
+		default:
+			return 1;
+	}
+}
+#else
+byte * icon_code(char code)
 {
 	byte *result;
 
-	switch (code) 
-  {
+	switch (code)
+	{
 // clear
 		case	0:
 			result = clear;
@@ -393,4 +677,5 @@ byte * icon_code(char code)
 	}
 	return (result);
 }
+#endif
 

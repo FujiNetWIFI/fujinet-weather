@@ -5,5 +5,9 @@
 void disp_weather(WEATHER  *wi);
 void disp_forecast(FORECAST *fc, char p);
 void decode_description(char code, char *buf);
+#ifdef COCO3
+unsigned char icon_code(char code);
+#else
 byte * icon_code(char code);
+#endif
 #endif
