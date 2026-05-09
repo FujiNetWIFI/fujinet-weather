@@ -50,6 +50,11 @@ ifeq ($(MAKE_COCO3),COCO3)
 	LDFLAGS_EXTRA_COCO = --org=1000 --limit=7E00
 endif
 
+ifeq ($(PLATFORM),apple2)
+	CFLAGS_EXTRA_APPLE2  += -DAPPLE2
+	LDFLAGS_EXTRA_APPLE2 += --start-addr 0x4000 --ld-args -D,__HIMEM__=0xBF00 -m $(BUILD_EXEC).map
+endif
+
 # Support 'make coco3'
 coco3:
 	$(MAKE) coco MAKE_COCO3=COCO3
