@@ -56,9 +56,9 @@ void change_location(LOCATION *loc) {
 	set_text();
 	clrscr();
 	gotoxy(10, 2);
-	revers(1);
+	//revers(1);
 	cprintf("Change location");
-	revers(0);
+	//revers(0);
 	gotoxy(2, 10);
 	cprintf("Input city name");
 	gotoxy(2, 11); 
