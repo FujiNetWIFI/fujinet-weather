@@ -27,6 +27,7 @@
 !fujinet-*.lib
 fujinet-lib/
 **/_libs/
+_cache/
 
 # Shared objects (inc. Windows DLLs)
 *.dll
@@ -69,6 +70,7 @@ dist/
 obj/
 __pycache__/
 .claude/
+r2r/
 
 # emulator configs
 altirra-debug.ini
