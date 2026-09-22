@@ -57,6 +57,7 @@ Please create all forks and enhancements to this application here via forks and 
       - http://www.lwtools.ca/releases/lwtools/lwtools-4.22.tar.gz
     - download cmoc, make, make install
       - http://perso.b2b2c.ca/~sarrazip/dev/cmoc-0.1.86.tar.gz
+  - The CoCo 3 icon header is checked in, so the build does not require the source PNGs. To regenerate it, set `MM_ICONS_DIR` to the directory containing the Meteomatics `wsymbol_*.png` files.
 
 
 
@@ -85,4 +86,3 @@ Please create all forks and enhancements to this application here via forks and 
  ## Other Platforms
 
  Work as expected...
-
