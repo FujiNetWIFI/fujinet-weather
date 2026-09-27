@@ -61,6 +61,11 @@ Please create all forks and enhancements to this application here via forks and 
 
 
 
+### Amiga
+- Workbench 1.3 and later, over FujiNet NIO; m68k-amigaos-gcc (bebbo) and a
+  fujinet-nio-workspace checkout. See [amiga/README.md](amiga/README.md).
+
+
 ### VIC-20
 - cc65 is used to build for the VIC
   - See Apple2 above for cc65 installations
