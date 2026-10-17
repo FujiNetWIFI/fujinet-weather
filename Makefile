@@ -5,6 +5,7 @@ PLATFORMS += apple2
 PLATFORMS += atari-pas
 PLATFORMS += c64
 PLATFORMS += coco
+PLATFORMS += pmd85
 #PLATFORMS += vic20
 
 # You can run 'make <platform>' to build for a specific platform,
@@ -55,6 +56,11 @@ ifeq ($(PLATFORM),apple2)
 	LDFLAGS_EXTRA_APPLE2 += --start-addr 0x4000 --ld-args -D,__HIMEM__=0xBF00 -m $(BUILD_EXEC).map
 endif
 
+# PMD 85: drop z88dk's generic console and its font (~1.6 KB) linked by the
+# startup code, all drawing is done by pmd85/src/draw*.
+LDFLAGS_EXTRA_PMD85 = -pragma-redirect:fputc_cons_generic=fputc_cons_none
+
+
 # Support 'make coco3'
 coco3:
 	$(MAKE) coco MAKE_COCO3=COCO3
@@ -100,6 +106,16 @@ $(ATARI_DISK): r2r/atari-pas/weather.xex $(wildcard atari/disk/*)
 
 clean::
 	rm -f atari/tmp*
+
+# PMD 85 ROM module: auto-booting cartridge image made from the plain binary
+PMD85_BIN = r2r/pmd85/$(PRODUCT).bin
+PMD85_RMM = r2r/pmd85/$(PRODUCT).rmm
+PMD85_MKRMM = support/pmd85/mkrmm.py
+
+pmd85/r2r:: $(PMD85_RMM)
+
+$(PMD85_RMM): $(PMD85_BIN) $(PMD85_MKRMM)
+	python3 $(PMD85_MKRMM) $< $@
 
 # Variables for coco-dist
 R2R_PRODUCT = r2r/coco/$(PRODUCT)

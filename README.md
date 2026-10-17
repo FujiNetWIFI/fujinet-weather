@@ -60,10 +60,14 @@ Please create all forks and enhancements to this application here via forks and 
   - The CoCo 3 icon header is checked in, so the build does not require the source PNGs. To regenerate it, set `MM_ICONS_DIR` to the directory containing the Meteomatics `wsymbol_*.png` files.
 
 
-
 ### Amiga
 - Workbench 1.3 and later, over FujiNet NIO; m68k-amigaos-gcc (bebbo) and a
   fujinet-nio-workspace checkout. See [amiga/README.md](amiga/README.md).
+
+
+### PMD 85
+- PMD 85 builds with zcc
+  - https://github.com/z88dk/z88dk/wiki
 
 
 ### VIC-20
