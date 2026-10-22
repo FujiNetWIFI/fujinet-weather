@@ -51,6 +51,7 @@ int main(void)
 	bool	quit = false;
 	char	forecast_page;
 	char	ch;
+	bool	forecast_loaded = false;	// fetched on first use after each refresh
 	COMMAND com = COM_REFRESH;
 
 	disp_message("Fetching location");
@@ -62,13 +63,19 @@ int main(void)
 		switch (com) {
 			case COM_REFRESH:		// refresh
 				disp_message("Fetching weather");
-				get_om_info(&loc, &wi, &fc);
+				get_weather(&loc, &wi);
+				forecast_loaded = false;
 				current_screen = SCREEN_INIT;
 			case COM_WEATHER:		// weather
 				disp_weather(&wi);
 				disp_weather_menu();
 				break;
 			case COM_FORECAST:		// forecast
+				if (!forecast_loaded) {
+					disp_message("Fetching forecast");
+					get_forecast(&loc, &fc);
+					forecast_loaded = true;
+				}
 				disp_forecast(&fc, forecast_page);
 				disp_forecast_menu(forecast_page);
 				break;

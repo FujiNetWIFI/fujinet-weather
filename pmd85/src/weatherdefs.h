@@ -40,8 +40,6 @@ typedef struct weather_info WEATHER;
 
 struct day_info {
 	char    date[DATE_LEN];
-	char	sunrise[DATETIME_LEN];	
-	char	sunset[DATETIME_LEN];
 	char	temp_min[QUARTER_LEN];
 	char	temp_max[QUARTER_LEN];
 	char	icon;   

@@ -369,7 +369,7 @@ unsigned char * get_weather_icon(char code, char is_day)
 			break;
 // partly cloudy
 		case	2:
-			result = bmp_weather2;
+			result = is_day ? bmp_weather2 : bmp_weather11;
 			break;
 // cloud
 		case	3:

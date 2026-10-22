@@ -10,7 +10,8 @@ void get_location(LOCATION *loc);
 void setup_omurl();
 char *time_str(char *buf);
 bool om_geocoding(LOCATION *loc, char *city);
-void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc);
+void get_weather(LOCATION *loc, WEATHER *wi);
+void get_forecast(LOCATION *loc, FORECAST *fc);
 void set_weather(WEATHER *wi, int segment);
 void set_forecast(FORECAST *fc, int segment);
 #endif // OPENMETEO_H

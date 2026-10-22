@@ -110,12 +110,26 @@ clean::
 # PMD 85 ROM module: auto-booting cartridge image made from the plain binary
 PMD85_BIN = r2r/pmd85/$(PRODUCT).bin
 PMD85_RMM = r2r/pmd85/$(PRODUCT).rmm
-PMD85_MKRMM = support/pmd85/mkrmm.py
+PMD85_MKRMM = pmd85/support/mkrmm.py
 
 pmd85/r2r:: $(PMD85_RMM)
 
 $(PMD85_RMM): $(PMD85_BIN) $(PMD85_MKRMM)
 	python3 $(PMD85_MKRMM) $< $@
+
+# PMD 85 asset dependencies. The generated files are kept in the repository,
+# they are only rebuilt when their source or converter changes.
+# (OBJS is not known yet when this Makefile is read, so object paths are spelled out.)
+PMD85_ASSETS = pmd85/assets
+PMD85_OBJ_DIR = $(BUILD_DIR)/pmd85/pmd85/src
+# font data: Atari font converted to PMD 85 column order, included by font.asm
+$(PMD85_OBJ_DIR)/font.o: $(PMD85_ASSETS)/weather-pmd85.fnt
+$(PMD85_ASSETS)/weather-pmd85.fnt: $(PMD85_ASSETS)/weather.fnt pmd85/support/fnt2pmd.py
+	python3 pmd85/support/fnt2pmd.py $< $@
+# bitmap data: weather icons, digits etc., included by bitmap.c
+$(PMD85_OBJ_DIR)/bitmap.o: $(PMD85_ASSETS)/bitmap-pmd85.h
+$(PMD85_ASSETS)/bitmap-pmd85.h: $(PMD85_ASSETS)/bitmap.png pmd85/support/png2pmd.py
+	python3 pmd85/support/png2pmd.py $< $@
 
 # Variables for coco-dist
 R2R_PRODUCT = r2r/coco/$(PRODUCT)

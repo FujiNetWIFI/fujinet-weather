@@ -25,8 +25,10 @@ void draw_text_double(const char *s);
 // void draw_char_double(unsigned char c);
 // void draw_bitmap(const unsigned char *bp);
 // void clear_part(unsigned short width, unsigned short height);
-// TODO
-void erase_char(void);
+// void erase_char(void);
+
+// clear 8x8 px area at current position, advance position to next character
+extern void erase_char(void);
 
 extern void __FASTCALL__ draw_char(unsigned char c);
 extern void __FASTCALL__ draw_char_double(unsigned char c);

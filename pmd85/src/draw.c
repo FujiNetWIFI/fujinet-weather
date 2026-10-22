@@ -60,52 +60,6 @@ void clear_screen(void)
 }
 
 
-// clear 8x8 px area at current position, advance position to next character
-void erase_char(void)
-{
-    static unsigned char *vp;
-    static char w;
-    static unsigned char mask;
-
-    mask = ~(video_bit | 0xC0); // clear pixels and color
-
-    for(w = 8; w--;) {
-        // clear column of pixels
-        vp = video_ptr;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-        *vp &= mask; vp += 64;
-
-        // next column
-        mask = ~((video_bit <<= 1) | 0xC0);
-        xpos++;
-        if (video_bit == 64)
-        {
-            // next byte
-            video_bit = 1;
-            mask = 0x3E; // ~0xC1
-            video_ptr++;
-            if (xpos == 288) {
-                xpos = 0;
-                ypos += 8;
-                if (ypos >= 256) {
-                    ypos = 0;
-                    video_ptr = (unsigned char *)VIDEO;
-                }
-                else {
-                    video_ptr += 16 + 7*64; // skip notepad area + next 7 lines
-                }
-            }
-        }
-    }
-}
-
-
 #if 0
 // Original C versions of drawing functions
 
@@ -295,6 +249,51 @@ void clear_part(unsigned short width, unsigned short height)
         }
         vp += 64;
         height--;
+    }
+}
+
+// clear 8x8 px area at current position, advance position to next character
+void erase_char(void)
+{
+    static unsigned char *vp;
+    static char w;
+    static unsigned char mask;
+
+    mask = ~(video_bit | 0xC0); // clear pixels and color
+
+    for(w = 8; w--;) {
+        // clear column of pixels
+        vp = video_ptr;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+        *vp &= mask; vp += 64;
+
+        // next column
+        mask = ~((video_bit <<= 1) | 0xC0);
+        xpos++;
+        if (video_bit == 64)
+        {
+            // next byte
+            video_bit = 1;
+            mask = 0x3E; // ~0xC1
+            video_ptr++;
+            if (xpos == 288) {
+                xpos = 0;
+                ypos += 8;
+                if (ypos >= 256) {
+                    ypos = 0;
+                    video_ptr = (unsigned char *)VIDEO;
+                }
+                else {
+                    video_ptr += 16 + 7*64; // skip notepad area + next 7 lines
+                }
+            }
+        }
     }
 }
 #endif

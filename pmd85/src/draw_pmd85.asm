@@ -8,6 +8,7 @@ PUBLIC _draw_char
 PUBLIC _draw_char_double
 PUBLIC _draw_bitmap
 PUBLIC _clear_part_asm
+PUBLIC _erase_char
 PUBLIC fputc_cons_none
 
 ;----------------------------------------------------------------------------
@@ -371,6 +372,119 @@ cp2:
     add     hl, de              ; next line
     dec     c                   ; height 0 wraps to 255, so 256 lines
     jp      nz, cp1             ; --> loop
+    ret
+
+;----------------------------------------------------------------------------
+
+;; extern void erase_char(void);
+; clear 8x8 px area at current position (pixels and color), advance position
+; to next character. Same result as the C erase_char() kept in draw.c (#if 0),
+; but pixel bits are collected per video byte and each byte is cleared once
+; (8 lines), instead of once per pixel column.
+; uses: xpos, ypos, video_ptr, video_bit
+_erase_char:
+    ld      a, 8                ; char_cols = 8
+    ld      (char_cols), a
+    ld      a, (_video_bit)     ; B = video_bit
+    ld      b, a
+    ld      c, 0                ; C = pixel bits collected in current byte
+; column loop
+ec1:
+    ld      a, c                ; collect pixel of this column
+    or      a, b
+    ld      c, a
+    ld      hl, (_xpos)         ; xpos++
+    inc     hl
+    ld      (_xpos), hl
+    ld      a, b                ; video_bit <<= 1
+    add     a, a
+    ld      b, a
+    cp      64
+    jp      nz, ec4
+
+    ; byte complete
+    call    ec_clear            ; clear collected pixels, C = 0
+    ld      b, 1                ; video_bit = 1
+    ld      hl, (_video_ptr)    ; video_ptr++
+    inc     hl
+    ld      (_video_ptr), hl
+    ld      hl, (_xpos)         ; if (xpos == 288) next text line
+    ld      a, l
+    cp      288 % 256
+    jp      nz, ec4
+    ld      a, h
+    cp      288 / 256
+    jp      nz, ec4
+    ld      hl, 0               ; xpos = 0
+    ld      (_xpos), hl
+    ld      hl, (_ypos)         ; ypos += 8
+    ld      de, 8
+    add     hl, de
+    ld      (_ypos), hl
+    ld      a, h                ; if (ypos >= 256) back to top
+    or      a
+    jp      z, ec3
+    ld      hl, 0               ; ypos = 0
+    ld      (_ypos), hl
+    ld      hl, DISPLAY         ; video_ptr = DISPLAY
+    ld      (_video_ptr), hl
+    jp      ec4
+ec3:
+    ld      hl, (_video_ptr)    ; skip notepad area + next 7 lines
+    ld      de, 16 + 7*64
+    add     hl, de
+    ld      (_video_ptr), hl
+ec4:
+    ld      hl, char_cols       ; if (--char_cols != 0) next column
+    dec     (hl)
+    jp      nz, ec1             ; --> loop
+    ld      a, b                ; store video_bit
+    ld      (_video_bit), a
+    ld      a, c                ; clear pixels collected in last (partial) byte
+    or      a
+    ret     z
+
+;; clear pixels collected in C and color bits in 8 lines from video_ptr
+; out: C = 0, B is kept
+ec_clear:
+    ld      a, c                ; C = mask = ~(pixels | 0xC0)
+    or      0xC0
+    cpl
+    ld      c, a
+    ld      hl, (_video_ptr)
+    ld      de, 64
+    ld      a, (hl)             ; line 0
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 1
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 2
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 3
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 4
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 5
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 6
+    and     c
+    ld      (hl), a
+    add     hl, de
+    ld      a, (hl)             ; line 7
+    and     c
+    ld      (hl), a
+    ld      c, 0
     ret
 
 ;----------------------------------------------------------------------------

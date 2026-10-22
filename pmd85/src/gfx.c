@@ -60,15 +60,28 @@ bool input_text(char *buf, const char *init, unsigned char bufsize)
 	for(;;)
 	{
 		ch = get_keyin();
-		if (ch == 10) { // EOL key
+		if (ch == 0x0A) { // EOL key
 			clear_cursor();
 			break; 
 		}
-		else if (ch == 27) { // Escape key
+		else if (ch == 0x1B) { // K0 key
 			clear_cursor();
 			return false; 
 		}
-		else if (ch == 0x7F) { // Delete key
+		else if (ch == 0x8E) // CLR key
+		{
+			// clear all input text
+			for(; i; i--)
+			{
+				get_position(&xpos, &ypos);
+				erase_char();
+				set_position(xpos-8, ypos);
+			}
+			clear_cursor();
+			draw_cursor();
+			buf[0] = '\0';
+		}
+		else if (ch == 0x7F || ch == 0x0C) { // Delete key or left arrow key
 			if (i) {
 				buf[--i] = '\0';
 				clear_cursor();
@@ -117,35 +130,35 @@ void handle_err(char *message)
 // 	gotoxy(8, 1);
 // 	cprintf(str);
 
-void disp_menu_item(char ch, char *s)
+void disp_menu_item(char *key, char *desciption)
 {
 	toggle_invert();
-	draw_char(ch);
+	draw_text(key);
 	toggle_invert();
-	draw_text(s);
+	draw_text(desciption);
 }
 
 void disp_weather_menu(void)
 {
 	set_position(0, 248);
 	set_color(MONO_WHITE);
-	disp_menu_item('F', "orecast ");
-	disp_menu_item('U', "nits ");
-	disp_menu_item('L', "ocation ");
-	disp_menu_item('R', "efresh ");
-	disp_menu_item('Q', "uit");
+	disp_menu_item("F", "orecast ");
+	disp_menu_item("U", "nits ");
+	disp_menu_item("L", "ocation ");
+	disp_menu_item("R", "efresh ");
+	disp_menu_item("Q", "uit");
 }
 
 void disp_forecast_menu(char page)
 {
-	set_position(0, 248);
+	set_position(8, 248);
 	set_color(MONO_WHITE);
 	if (page == 1) {
-		disp_menu_item('N', "ext ");
+		disp_menu_item("N", "ext page ");
 	} else {
-		disp_menu_item('P', "rev ");
+		disp_menu_item("P", "rev page ");
 	}
-	disp_menu_item('B', "ack");
+	disp_menu_item("B", "ack to weather");
 }
 
 
@@ -177,12 +190,16 @@ bool change_location(LOCATION *loc)
 		}
 		draw_text("Input city name");
 
-		set_position(2*8, 10*8);
-		draw_text("Blank to detect location");
 		set_position(2*8, 11*8);
-		draw_text("K0 to cancel");
+		disp_menu_item("EOL", " to search city");
 
-		set_position(1*8, 7*8);
+		set_position(2*8, 12*8+2);
+		disp_menu_item("K0", " to cancel");
+
+		set_position(2*8, 13*8+4);
+		draw_text("Clear to detect location");
+
+		set_position(1*8, 8*8);
 		draw_char('>');
 
 		if (!input_text(input, init, sizeof(input))) {

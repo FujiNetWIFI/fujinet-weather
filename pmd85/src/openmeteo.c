@@ -27,7 +27,8 @@ const char om_lon[] = "&longitude=";
 const char *om_tail_weather[] = {
 	"&timezone=auto&current=relative_humidity_2m,weather_code,cloud_cover,pressure_msl,is_day",
 	"&current=temperature_2m,apparent_temperature,wind_speed_10m,wind_direction_10m",
-	"&current=dew_point_2m,visibility"
+	// sunrise/sunset exist only as daily values, today's are fetched with the weather
+	"&timezone=auto&current=dew_point_2m,visibility&daily=sunrise,sunset&forecast_days=1"
 };
 
 const char om_forecast_days_hours_daily[] = "&timezone=auto&forecast_days=8&daily=";
@@ -36,7 +37,7 @@ const char *om_tail_forecast[] = {
 	"temperature_2m_max,temperature_2m_min",
 	"wind_speed_10m_max,wind_direction_10m_dominant",
 	"precipitation_sum,uv_index_max,precipitation_probability_max",
-	"weather_code,sunrise,sunset"
+	"weather_code"
 };
 
 /* unit option string */
@@ -108,70 +109,61 @@ void setup_omurl(LOCATION *loc, char *param, bool isforecast)
 }
 
 //
+// open and parse one open-meteo request, what + n identify it in error messages
 //
-//
-void get_om_info(LOCATION *loc, WEATHER *wi, FORECAST *fc)
+static void om_request(LOCATION *loc, const char *param, bool isforecast, const char *what, int n)
 {
-	char querybuf[HALF_LEN * 2];
+	setup_omurl(loc, (char *)param, isforecast);
 
+	disp_status("Reading...");
+	err = network_open(omurl, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
+	sprintf(msgbuf, "%s open %d", what, n);
+	handle_err(msgbuf);
+
+	progress_dots(increment_dot());
+
+	err = network_json_parse(omurl);
+	sprintf(msgbuf, "%s parse %d", what, n);
+	handle_err(msgbuf);
+
+	progress_dots(increment_dot());
+
+	disp_status("Processing...");
+}
+
+//
+// fetch current weather, including today's sunrise/sunset
+//
+void get_weather(LOCATION *loc, WEATHER *wi)
+{
 	pdot = 0;
 
-	// weather query
-	for (int i = 0; i < 3; i++) 
+	// city name, state, country code
+	strcpy(wi->name, utf8_to_ascii(loc->city));
+	strcpy(wi->state, loc->state);
+	strcpy(wi->country, loc->countryCode);
+
+	for (int i = 0; i < 3; i++)
 	{
-		setup_omurl(loc, om_tail_weather[i], false);
-
-		disp_status("Reading...");
-		err = network_open(omurl, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
-		sprintf(msgbuf, "om open %d", i + 1);
-		handle_err(msgbuf);
-
-		progress_dots(increment_dot());
-
-		err = network_json_parse(omurl);
-		sprintf(msgbuf, "om parse %d", i + 1);	
-		handle_err(msgbuf);
-
-		progress_dots(increment_dot());
-
-		// city name, state, country code
-		strcpy(wi->name, utf8_to_ascii(loc->city));
-		strcpy(wi->state, loc->state);
-		strcpy(wi->country, loc->countryCode);
-
-		disp_status("Processing...");
+		om_request(loc, om_tail_weather[i], false, "om", i + 1);
 		set_weather(wi, i + 1);
-
-		network_close(omurl); 
-	}
-
-	// forecast
-	for (int i = 0; i < 4; i++) 
-	{
-		setup_omurl(loc, om_tail_forecast[i], true);
-	
-		disp_status("Reading...");
-		err = network_open(omurl, OPEN_MODE_HTTP_GET_H, OPEN_TRANS_NONE);
-		sprintf(msgbuf, "forecast open %d", i + 1);
-		handle_err(msgbuf);
-
-		progress_dots(increment_dot());
-
-		err = network_json_parse(omurl);
-		sprintf(msgbuf, "forecast parse %d", i + 1);
-		handle_err(msgbuf);
-
-		progress_dots(increment_dot());
-
-		disp_status("Processing...");
-		set_forecast(fc, i+1);
 		network_close(omurl);
 	}
+}
 
-	//  Copy today's sunrise/sunset from forecast data to weather data
-	//  We don't have both until the second part of the forecast is retrieved
-	strcpy(wi->sunrise, fc->day[0].sunrise);
-	strcpy(wi->sunset, fc->day[0].sunset);
+//
+// fetch 8 day forecast
+//
+void get_forecast(LOCATION *loc, FORECAST *fc)
+{
+	pdot = 0;
+
+	for (int i = 0; i < 4; i++)
+	{
+		om_request(loc, om_tail_forecast[i], true, "forecast", i + 1);
+		set_forecast(fc, i + 1);
+		network_close(omurl);
+	}
 }
 
 //
@@ -215,6 +207,9 @@ void set_weather(WEATHER *wi, int segment)
 			JSON_QUERY(omurl, "/current/dew_point_2m", wi->dew_point, sizeof(wi->dew_point));
 			//  visibility
 			JSON_QUERY(omurl, "/current/visibility", wi->visibility, sizeof(wi->visibility));
+			//  today's sunrise and sunset
+			JSON_QUERY(omurl, "/daily/sunrise/0", wi->sunrise, sizeof(wi->sunrise));
+			JSON_QUERY(omurl, "/daily/sunset/0", wi->sunset, sizeof(wi->sunset));
 			break;
 	}	
 
@@ -274,12 +269,6 @@ void set_forecast(FORECAST *fc, int segment)
 				sprintf(querybuf, "/daily/weather_code/%d", i);
 				JSON_QUERY(omurl, querybuf, prbuf, sizeof(prbuf));
 				day->icon = (char)atoi(prbuf);
-				// sunrise
-				sprintf(querybuf, "/daily/sunrise/%d", i);
-				JSON_QUERY(omurl, querybuf, day->sunrise, sizeof(day->sunrise));
-				// sunset
-				sprintf(querybuf, "/daily/sunset/%d", i);
-				JSON_QUERY(omurl, querybuf, day->sunset, sizeof(day->sunset));
 				break;
 		}
 

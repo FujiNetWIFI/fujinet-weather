@@ -94,7 +94,7 @@ def main():
 
     bitmaps = []
     # weather icons, 4x3 grid (last cell is blank)
-    for i in range(11):
+    for i in range(12):
         bitmaps.append(get_bitmap_from_pixels(pix, 72*(i % 4), 53*(i // 4), 72, 53, f"bmp_weather{i}"))
     for d in range(10):
         bitmaps.append(get_bitmap_from_pixels(pix, 18*d, 162, 18, 54, f"bmp_digit{d}"))
