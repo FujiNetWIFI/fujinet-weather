@@ -425,12 +425,17 @@ end;
 
 procedure HTTPGet(var api, query:string);
 var uri:string[200];
+    uriText:array [0..200] of char;
 begin
     uri:='N:http://';
     MergeStr(uri, api);
     MergeStr(uri, query);
     MergeStr(uri,#0#0);
-    ioResult := TCP_Connect(uri);
+    // TCP_Connect(var tcp_uri:PChar) hands the address of its argument to the
+    // FujiNet as is. For a string that is the length byte, so pass the text
+    // (including the #0 terminator) in a char array instead.
+    move(uri[1], uriText, Length(uri));
+    ioResult := TCP_Connect(uriText);
     if isIOError then exit;
     ioResult := WaitAndParseRequest;
     if isIOError then exit;
