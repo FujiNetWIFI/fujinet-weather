@@ -1,0 +1,68 @@
+#ifndef	WEATHERDEFS_H
+#define WEATHERDEFS_H
+#define	LINE_LEN	33
+#define	HALF_LEN	20
+#define	QUARTER_LEN	10
+#define DATETIME_LEN 17
+#define DATE_LEN	11
+#define TIME_LEN	6
+struct location_info {
+	char	lon[HALF_LEN];
+	char	lat[HALF_LEN];
+	char	city[LINE_LEN];
+	char	state[LINE_LEN];
+	char	countryCode[QUARTER_LEN];
+};
+typedef struct location_info LOCATION;
+
+struct weather_info {
+	char	name[LINE_LEN];
+	char	state[LINE_LEN];
+	char	country[QUARTER_LEN];
+	char	timezone[QUARTER_LEN];
+	char    datetime[DATETIME_LEN];
+	long	tz;					// time-zone offset
+	char	icon;
+	char	is_day;				// 1 = day, 0 = night (from open-meteo /current/is_day)
+	char	sunrise[DATETIME_LEN];
+	char	sunset[DATETIME_LEN];
+	char	temp[QUARTER_LEN];
+	char	feels_like[QUARTER_LEN];
+	char	pressure[QUARTER_LEN];
+	char	humidity[QUARTER_LEN];
+	char	dew_point[QUARTER_LEN];
+	char	clouds[QUARTER_LEN];
+	char	visibility[HALF_LEN];
+	char	wind_speed[QUARTER_LEN];
+	char	wind_deg[QUARTER_LEN];
+};
+typedef struct weather_info WEATHER;
+
+struct day_info {
+	char    date[DATE_LEN];
+	char	temp_min[QUARTER_LEN];
+	char	temp_max[QUARTER_LEN];
+	char	icon;   
+	char	precipitation_sum[QUARTER_LEN];
+	char	precip_prob[4];		// precipitation_probability_max, "0".."100" (%)
+  	char	uv_index_max[QUARTER_LEN]; 
+	char	wind_speed[QUARTER_LEN];
+	char	wind_deg[QUARTER_LEN]; 
+};
+typedef struct day_info  DAYINFO;
+
+struct forecast_info {
+	DAYINFO day[8];
+};
+typedef struct forecast_info  FORECAST;
+enum unit_option {
+    METRIC,
+    IMPERIAL
+};
+typedef enum unit_option UNITOPT;
+
+#define SCREEN_INIT		0
+#define SCREEN_WEATHER	1
+#define SCREEN_FORECAST	2
+
+#endif // WEATHERDEFS_H 

@@ -5,6 +5,7 @@ PLATFORMS += apple2
 PLATFORMS += atari-pas
 PLATFORMS += c64
 PLATFORMS += coco
+PLATFORMS += pmd85
 #PLATFORMS += vic20
 
 # You can run 'make <platform>' to build for a specific platform,
@@ -55,6 +56,11 @@ ifeq ($(PLATFORM),apple2)
 	LDFLAGS_EXTRA_APPLE2 += --start-addr 0x4000 --ld-args -D,__HIMEM__=0xBF00 -m $(BUILD_EXEC).map
 endif
 
+# PMD 85: drop z88dk's generic console and its font (~1.6 KB) linked by the
+# startup code, all drawing is done by pmd85/src/draw*.
+LDFLAGS_EXTRA_PMD85 = -pragma-redirect:fputc_cons_generic=fputc_cons_none
+
+
 # Support 'make coco3'
 coco3:
 	$(MAKE) coco MAKE_COCO3=COCO3
@@ -100,6 +106,30 @@ $(ATARI_DISK): r2r/atari-pas/weather.xex $(wildcard atari/disk/*)
 
 clean::
 	rm -f atari/tmp*
+
+# PMD 85 ROM module: auto-booting cartridge image made from the plain binary
+PMD85_BIN = r2r/pmd85/$(PRODUCT).bin
+PMD85_RMM = r2r/pmd85/$(PRODUCT).rmm
+PMD85_MKRMM = pmd85/support/mkrmm.py
+
+pmd85/r2r:: $(PMD85_RMM)
+
+$(PMD85_RMM): $(PMD85_BIN) $(PMD85_MKRMM)
+	python3 $(PMD85_MKRMM) $< $@
+
+# PMD 85 asset dependencies. The generated files are kept in the repository,
+# they are only rebuilt when their source or converter changes.
+# (OBJS is not known yet when this Makefile is read, so object paths are spelled out.)
+PMD85_ASSETS = pmd85/assets
+PMD85_OBJ_DIR = $(BUILD_DIR)/pmd85/pmd85/src
+# font data: Atari font converted to PMD 85 column order, included by font.asm
+$(PMD85_OBJ_DIR)/font.o: $(PMD85_ASSETS)/weather-pmd85.fnt
+$(PMD85_ASSETS)/weather-pmd85.fnt: $(PMD85_ASSETS)/weather.fnt pmd85/support/fnt2pmd.py
+	python3 pmd85/support/fnt2pmd.py $< $@
+# bitmap data: weather icons, digits etc., included by bitmap.c
+$(PMD85_OBJ_DIR)/bitmap.o: $(PMD85_ASSETS)/bitmap-pmd85.h
+$(PMD85_ASSETS)/bitmap-pmd85.h: $(PMD85_ASSETS)/bitmap.png pmd85/support/png2pmd.py
+	python3 pmd85/support/png2pmd.py $< $@
 
 # Variables for coco-dist
 R2R_PRODUCT = r2r/coco/$(PRODUCT)
