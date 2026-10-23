@@ -94,6 +94,27 @@ var IP_api: string[15] = 'ip-api.com';
     theme: TTheme;
     savingEnabled: boolean;
 
+// Replaces crt ReadKey: that one converts key codes through the KEYDEF
+// table pointer ($79), which only the XL/XE OS provides, so on Atari
+// 400/800 it returns wrong characters and no hot key works.
+// This one calls the OS keyboard (K:) handler's get-character routine from
+// the device handler table at $E420 (all OS versions), so the OS converts the
+// key with its own table. Waits for a key, returns it as ATASCII.
+function ReadKey: char; assembler;
+asm
+        stx @sp             ; keep X, the Mad-Pascal stack pointer
+        jsr kgetch
+        ldx @sp: #0
+        sta Result
+        jmp done
+kgetch  lda $E425           ; K: GET routine address - 1, high byte
+        pha
+        lda $E424           ; low byte
+        pha
+        rts                 ; jump there, it returns to our jsr with A = char
+done
+end;
+
 {$i interrupts.inc}
 {$i json.inc}    
 
