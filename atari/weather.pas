@@ -93,8 +93,8 @@ var IP_api: string[15] = 'ip-api.com';
     location: TLocation;
     theme: TTheme;
     savingEnabled: boolean;
-  
-{$i interrupts.inc}    
+
+{$i interrupts.inc}
 {$i json.inc}    
 
     
@@ -423,18 +423,32 @@ begin
     end;
 end;
 
-procedure HTTPGet(var api, query:string);
-var uri:string[200];
-    uriText:array [0..200] of char;
+const URI_MAX = 200;
+
+// append the text of Pascal string s to the char buffer buf at position pos,
+// returns the new position; never writes past URI_MAX
+function AppendText(buf: pointer; pos: byte; var s: string): byte;
+var n: byte;
 begin
-    uri:='N:http://';
-    MergeStr(uri, api);
-    MergeStr(uri, query);
-    MergeStr(uri,#0#0);
+    n := Length(s);
+    if pos + n > URI_MAX then n := URI_MAX - pos;
+    move(s[1], pointer(word(buf) + pos), n);
+    result := pos + n;
+end;
+
+procedure HTTPGet(var api, query:string);
+var uriText: array [0..URI_MAX + 1] of char;
+    n: byte;
+    prefix: string[9] = 'N:http://';
+begin
     // TCP_Connect(var tcp_uri:PChar) hands the address of its argument to the
-    // FujiNet as is. For a string that is the length byte, so pass the text
-    // (including the #0 terminator) in a char array instead.
-    move(uri[1], uriText, Length(uri));
+    // FujiNet as is. For a Pascal string that is the length byte, so the URL
+    // is built directly in a char array instead.
+    n := AppendText(@uriText, 0, prefix);
+    n := AppendText(@uriText, n, api);
+    n := AppendText(@uriText, n, query);
+    uriText[n] := #0;
+    uriText[n + 1] := #0;
     ioResult := TCP_Connect(uriText);
     if isIOError then exit;
     ioResult := WaitAndParseRequest;
