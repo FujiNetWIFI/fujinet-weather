@@ -57,7 +57,7 @@ ifeq ($(PLATFORM),apple2)
 endif
 
 # PMD 85: drop z88dk's generic console and its font (~1.6 KB) linked by the
-# startup code, all drawing is done by pmd85/src/draw*.
+# startup code; all drawing is done by pmd85/src/draw*.
 LDFLAGS_EXTRA_PMD85 = -pragma-redirect:fputc_cons_generic=fputc_cons_none
 
 
@@ -65,22 +65,27 @@ LDFLAGS_EXTRA_PMD85 = -pragma-redirect:fputc_cons_generic=fputc_cons_none
 coco3:
 	$(MAKE) coco MAKE_COCO3=COCO3
 
-# Generated CoCo 3 charset header (4bpp), built from the MSDOS port's font.
+# Generated CoCo 3 charset header (2bpp), built from the MS-DOS port's font.
 COCO3_CHARSET_H = coco/src/charset_coco3.h
 
 $(COCO3_CHARSET_H): coco/support/cvt_msdos_font.py msdos/src/ascii.c
 	python3 coco/support/cvt_msdos_font.py
 
-# Generated CoCo 3 weather icons header (4bpp inline 32x32 icons, 4608 bytes).
-COCO3_ICONS_H = coco/src/charset_coco3_icons.h
-
-$(COCO3_ICONS_H): coco/support/cvt_icons.py
-	python3 coco/support/cvt_icons.py
-
 # Only regenerate during COCO3 builds.
 ifeq ($(MAKE_COCO3),COCO3)
-coco/r2r:: $(COCO3_CHARSET_H) $(COCO3_ICONS_H)
+coco/r2r:: $(COCO3_CHARSET_H)
 endif
+
+# These need the Pillow Python package, so the build uses their committed output.
+# Run them by hand after changing a source image.
+.PHONY: coco3-icons pmd85-bitmap
+
+# Source PNGs are outside the repo, in $MM_ICONS_DIR.
+coco3-icons:
+	python3 coco/support/cvt_icons.py
+
+pmd85-bitmap:
+	python3 pmd85/support/png2pmd.py pmd85/assets/bitmap.png pmd85/assets/bitmap-pmd85.h
 
 atari: atari-pas
 
@@ -117,8 +122,9 @@ pmd85/r2r:: $(PMD85_RMM)
 $(PMD85_RMM): $(PMD85_BIN) $(PMD85_MKRMM)
 	python3 $(PMD85_MKRMM) $< $@
 
-# PMD 85 asset dependencies. The generated files are kept in the repository,
-# they are only rebuilt when their source or converter changes.
+# PMD 85 asset dependencies. The generated files are kept in the repository;
+# the font is rebuilt when its source or converter changes, the bitmap only
+# by 'make pmd85-bitmap'.
 # (OBJS is not known yet when this Makefile is read, so object paths are spelled out.)
 PMD85_ASSETS = pmd85/assets
 PMD85_OBJ_DIR = $(BUILD_DIR)/pmd85/pmd85/src
@@ -128,8 +134,6 @@ $(PMD85_ASSETS)/weather-pmd85.fnt: $(PMD85_ASSETS)/weather.fnt pmd85/support/fnt
 	python3 pmd85/support/fnt2pmd.py $< $@
 # bitmap data: weather icons, digits etc., included by bitmap.c
 $(PMD85_OBJ_DIR)/bitmap.o: $(PMD85_ASSETS)/bitmap-pmd85.h
-$(PMD85_ASSETS)/bitmap-pmd85.h: $(PMD85_ASSETS)/bitmap.png pmd85/support/png2pmd.py
-	python3 pmd85/support/png2pmd.py $< $@
 
 # Variables for coco-dist
 R2R_PRODUCT = r2r/coco/$(PRODUCT)

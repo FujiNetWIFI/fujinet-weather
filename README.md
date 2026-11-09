@@ -1,97 +1,45 @@
 # fujinet-weather
-The canonical weather application for Atari, ADAM, C64, Coco, and Apple2
+Weather application for FujiNet on Atari, ADAM, Apple II, C64, CoCo, MS-DOS, PMD 85, Amiga and VIC-20.
 
-June 2024 - This codebase is now in its own repo. It has been pulled from fujinet-apps and moved here.
-Please create all forks and enhancements to this application here via forks and PRs.
+# Building
 
------------------------
-
-
-# Update Notes
-
-### ADAM
-  June 24 - This version has the following features
-  1) Option feature the change polling frequency
-  2) Only asks for weather no more than once every 10 minutes
-  3) Calls location by ip only once instead of everytime the application is run
-  4) You can manually enter the latitude and logitude if desired
-
-
-### Apple2
- - June 2024
-   - move build/makefile over to fenrocks makefile system
-   - adjusted BSS to fit in space allocated
-
-
-# Building on Platforms
+`make <platform>` builds one platform into `r2r/<platform>/`; `make all` builds every platform in `PLATFORMS`. fujinet-lib is fetched automatically.
 
 ### Atari
-- need the Mad-Pascal (MP) 32-bit Turbo Pascal compiler - https://mads.atari8.info/doc/en/index.html
-- no more info currently
-
+- Mad-Pascal: https://mads.atari8.info/doc/en/index.html
+- `make atari`
 
 ### ADAM
-- need zcc compiler for ADAM.
-  - https://github.com/z88dk/z88dk/wiki
+- z88dk: https://github.com/z88dk/z88dk/wiki
+- `make adam`
 
-
-
-### Apple2
-- cc65 & fn-libs (pulled automatically) are used to build the Apple2
-
+### Apple II
+- cc65:
   - git clone https://github.com/cc65/cc65.git
   - make clean && make PREFIX=/usr/local && sudo make install PREFIX=/usr/local
-  - Verify with this command:
-    - cl65 --print-target-path
+- `make apple2`
 
+### C64
+- cc65 (see Apple II)
+- `make c64`
 
-### c64
-- cc65 is used to build for the C64
-  - See Apple2 above for cc65 installations
+### CoCo
+- CMOC and lwtools: http://perso.b2b2c.ca/~sarrazip/dev/cmoc.html, http://www.lwtools.ca/
+- `make coco` (CoCo 1/2), `make coco3`, or `make coco-dist` for one disk with both and a loader that picks by model.
+- The CoCo 3 icon header is checked in, so the build does not require the source PNGs. To regenerate it, run `make coco3-icons` (needs the Pillow Python package) with `MM_ICONS_DIR` set to the directory containing the Meteomatics `wsymbol_*.png` files.
 
+### MS-DOS
+- Open Watcom 2
+- `./make-exp msdos` (builds against fujinet-lib-experimental, which has the RS-232 support)
 
-### Coco
-- Color Computer builds with CMOC - CMOC is a 6809-generating cross-compiler for a large subset of the C language
-  - http://perso.b2b2c.ca/~sarrazip/dev/cmoc.html
-    - download lwtools, make, make install
-      - http://www.lwtools.ca/releases/lwtools/lwtools-4.22.tar.gz
-    - download cmoc, make, make install
-      - http://perso.b2b2c.ca/~sarrazip/dev/cmoc-0.1.86.tar.gz
-  - The CoCo 3 icon header is checked in, so the build does not require the source PNGs. To regenerate it, set `MM_ICONS_DIR` to the directory containing the Meteomatics `wsymbol_*.png` files.
-
+### PMD 85
+- z88dk (see ADAM)
+- `make pmd85`
 
 ### Amiga
 - Workbench 1.3 and later, over FujiNet NIO; m68k-amigaos-gcc (bebbo) and a
   fujinet-nio-workspace checkout. See [amiga/README.md](amiga/README.md).
 
-
-### PMD 85
-- PMD 85 builds with zcc
-  - https://github.com/z88dk/z88dk/wiki
-
-
 ### VIC-20
-- cc65 is used to build for the VIC
-  - See Apple2 above for cc65 installations
-
-
-# Usage and Application Notes
-
-### Apple 2
-- Apple2 builds fine but it requires a API key from OpenWeatherMap
-  - https://home.openweathermap.org
-  - You need to setup an account, request on-by-one and get an API Key
-  - You then must upgrade that key to be "Base Plan" - which is free for first 1000 calls
-    - you will need to register your name a credit card to get the plan
-
- This isn't optimal but it's what required right now in June 2024, other API plans will be explored.
-
-  - Put the contents of the KEY (32 bytes long) into a file named '56000101.key'.
-  - Save the file in the /FujiNet directory of your Fujinet SD card.
-    - full path would be: SD/FujiNet/56000101.key
-    - Note capitalization
-
-
- ## Other Platforms
-
- Work as expected...
+- cc65 (see Apple II)
+- Not part of the main build; `make -C vic20-rom`
