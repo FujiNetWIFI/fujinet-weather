@@ -164,10 +164,9 @@ int main(void)
 			}
 		}
 	}
-	// Restore graphics + reset FujiNet, then cold-start the CoCo so it
-	// reboots and FujiNet's autorun.dsk (the config) gets loaded.
+	// Boot mode 0 mounts CONFIG, so the cold start boots into it.
 	gfx_shutdown();
-	fuji_reset();
+	fuji_set_boot_mode(0);
 	coldStart();
 	return 0;
 }
