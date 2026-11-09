@@ -3,7 +3,8 @@
  * @author Thomas Cherryhomes
  * @email thom dot cherryhomes at gmail dot com
  * @license gpl v. 3, see LICENSE.md, for details.
- * @verbose Graphics primitives for PMODE3 (128x192x2bpp)
+ * @verbose Graphics primitives: PMODE3 (128x192x2bpp) on CoCo 1/2,
+ *          320x200x16 on CoCo 3
  */
 
 #include <cmoc.h>
@@ -319,8 +320,8 @@ void set_screenbuffer(void)
 #endif
 
 /**
- * @brief set up graphics for PMODE 3
- * @param c color set to use
+ * @brief set up graphics: PMODE 3 on CoCo 1/2, 320x200x16 on CoCo 3
+ * @param c color set to use (CoCo 1/2 only)
  */
 void gfx(unsigned char c)
 {
@@ -385,9 +386,6 @@ void gfx(unsigned char c)
  * the palette we backed up in gfx() init.  Without this, BASIC's restart
  * after coldStart() would draw text into graphics-mode memory and the user
  * would just see garbage instead of the FujiNet config disk autoboot.
- *
- * On CoCo 1/2 nothing GIME-specific to undo, but we also flip back to a
- * normal text screen for symmetry.
  */
 void gfx_shutdown(void)
 {
@@ -420,10 +418,9 @@ void gfx_shutdown(void)
    * AG=0 so we land in alphanumeric mode, not graphics. */
   *(byte *)0xFF22 = 0x00;
 
-  /* Now actually flip to CoCo 2 compatibility mode (bit 7) with MMU
-   * disabled.  RESET in coldStart() relies on this for BASIC's normal
-   * text-screen init. */
-  *(byte *)0xFF90 = 0x80;
+  /* gfx()'s 0x4C plus CoCo 2 compat; MC2 must stay set or the Becker
+   * port at $FF41/$FF42 disappears. */
+  *(byte *)0xFF90 = 0xCC;
 
   /* Restore the palette we backed up (CoCo 3 native mode register) so
    * any post-reset compat-mode display isn't tinted by our greens. */
